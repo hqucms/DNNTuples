@@ -1,0 +1,10 @@
+<use name="FWCore/Framework"/>
+<use name="FWCore/ParameterSet"/>
+<use name="DataFormats/PatCandidates"/>
+<use name="DataFormats/BTauReco"/>
+<use name="DeepNTuples/NtupleCommons"/>
+<use name="DeepNTuples/FatJetHelpers"/>
+<use name="DeepNTuples/BTagHelpers"/>
+<export>
+  <lib   name="1"/>
+</export>
