@@ -31,6 +31,9 @@ public:
     branchName_(branchName), jetR_(jetR), data(branchName_) {}
   virtual ~NtupleBase() {}
 
+  // set read mode
+  void setIsRead(bool read = true) { data.setIsRead(read); }
+
   // initilize the modules (read configuration and get the tokens)
   virtual void readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector && cc) {}
 
@@ -59,9 +62,6 @@ protected:
   std::string branchName_;
   double jetR_ = -1;
   TreeData data;
-
-//  bool read_;
-//  std::vector<TString> allbranches_;
 
 };
 

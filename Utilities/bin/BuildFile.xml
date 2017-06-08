@@ -1,0 +1,11 @@
+<use   name="DeepNTuples/Utilities"/>
+<use   name="DeepNTuples/NtupleAK8"/>
+<use   name="root"/>
+<use   name="rootgraphics"/>
+
+<bin name="createMergeList" file="createMergeList.cc" />
+<bin name="merge" file="merge.cc" />
+
+<bin name="printBranches" file="printBranches.cc" />
+
+<bin name="checkFileList" file="checkFileList.cc" />

@@ -18,8 +18,8 @@ namespace deepntuples {
 class TreeWriter {
 
 public :
-  TreeWriter(TTree *tree, const char *treename="tree"): fTreeName(treename), fTree(tree) {
-    fTree->SetName(fTreeName.Data());
+  TreeWriter(TTree *tree, const char *treename="tree", bool isRead=false): fTreeName(treename), fTree(tree), fRead(isRead) {
+    if (!isRead) fTree->SetName(fTreeName.Data());
   }
 
   ~TreeWriter() { delete fTree; }
@@ -30,14 +30,27 @@ public :
   TTree   *getTree() { return fTree; }
 
   template<class T>
-  void    book(const char *name, T& var, const char *type)  { fTree->Branch(name, &var, TString(name).Append("/").Append(type).Data()); }
+  void    book(const char *name, T& var, const char *type)  {
+    if(fRead){
+      fTree->SetBranchAddress(name, &var);
+    }else{
+      fTree->Branch(name, &var, TString(name).Append("/").Append(type).Data());
+    }
+  }
 
   template<class T>
-  void    book(const char *name, std::vector<T>& varv)    { fTree->Branch(name, &varv); }
+  void    book(const char *name, std::vector<T>& varv) {
+    if(fRead){
+      fTree->SetBranchAddress(name, &varv);
+    }else{
+      fTree->Branch(name, &varv);
+    }
+  }
 
 protected :
   TString fTreeName;
   TTree   *fTree;
+  bool    fRead;
 
 }; // TreeWriter
 

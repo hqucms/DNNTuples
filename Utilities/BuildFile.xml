@@ -1,0 +1,6 @@
+<use   name="DeepNTuples/NtupleCommons"/>
+<use   name="DeepNTuples/NtupleAK8"/>
+<use   name="root"/>
+<export>
+  <lib   name="1"/>
+</export>

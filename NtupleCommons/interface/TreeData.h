@@ -66,15 +66,19 @@ protected:
 class TreeData {
   using TypeMap = std::map<std::type_index, std::string>;
 public:
-  TreeData(std::string prefix = "") : isBooked(false), prefix(prefix) {}
+  TreeData(std::string prefix = "") : isBooked(false), isRead(false), prefix(prefix){}
   virtual ~TreeData() { for(auto &p : data) delete p.second; }
+
+  void setIsRead(bool isread = true) { isRead = isread; }
 
   template<typename Type>
   void add(std::string name, const Type defaultValue){
-    assert(!isBooked);
+    assert(isRead || !isBooked);
     auto fullname = fullName(name);
-    if (data.find(fullname) != data.end())
+    if (data.find(fullname) != data.end()){
+      if (isRead) return; // ReadMode: the TreeVar has already been created; just return and call book() to set branch address later
       throw std::invalid_argument("[TreeData::add] Variable w/ the same name has already been added: "+fullname);
+    }
     try{
       data[fullname] = new TreeVar<Type>(fullname, type_names.at(std::type_index(typeid(Type))), defaultValue);
     } catch (const std::out_of_range& e){
@@ -84,10 +88,12 @@ public:
 
   template<typename Type>
   void addMulti(std::string name){
-    assert(!isBooked);
+    assert(isRead || !isBooked);
     auto fullname = fullName(name);
-    if (data.find(fullname) != data.end())
+    if (data.find(fullname) != data.end()){
+      if (isRead) return; // ReadMode: the TreeVar has already been created; just return and call book() to set branch address later
       throw std::invalid_argument("[TreeData::addMulti] Variable w/ the same name has already been added: "+fullname);
+    }
     data[fullname] = new TreeMultiVar<Type>(fullname);
   }
 
@@ -169,6 +175,7 @@ protected:
   }
 
   bool isBooked;
+  bool isRead;
   std::string prefix;
   std::map<std::string, AbstractTreeVar*> data;
   static TypeMap type_names;
