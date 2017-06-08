@@ -53,13 +53,24 @@ public:
   virtual ~FatJetMatching() {}
 
   std::pair<FatJetFlavor, const reco::GenParticle*> flavor(const pat::Jet *jet, const reco::GenParticleCollection& genParticles);
+  std::pair<FatJetFlavor, const reco::GenParticle*> flavorJMAR(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double genRadius = 0.6);
 
 private:
   void printGenInfoHeader() const;
   void printGenParticleInfo(const reco::GenParticle* genParticle, const int idx) const;
   const reco::GenParticle* getFinal(const reco::GenParticle* particle);
   bool isHadronic(const reco::GenParticle* particle) const;
-  double maxDeltaRToDaughterQuarks(const pat::Jet *jet, const reco::GenParticle* mother) const;
+  template <typename T>
+  double maxDeltaRToDaughterQuarks(const T *center, const reco::GenParticle* mother) const {
+    // mother particle needs to be the final version before decay
+    double maxDeltaR = -1;
+    for (const auto &q : mother->daughterRefVector()){
+      if (std::abs(q->pdgId()) > ParticleID::p_b) continue;
+      double deltaR = reco::deltaR(q->p4(), center->p4());
+      if (deltaR > maxDeltaR) maxDeltaR = deltaR;
+    }
+    return maxDeltaR > 0 ? maxDeltaR : 1e9;
+  }
 
 private:
   double jetR_ = 0.8;

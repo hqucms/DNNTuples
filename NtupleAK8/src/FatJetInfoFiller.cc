@@ -30,6 +30,9 @@ void FatJetInfoFiller::book() {
   data.add<int>("fj_isZ", 0);
   data.add<int>("fj_isH", 0);
 
+  // JMAR label
+  data.add<int>("fj_labelJMAR", 0);
+
   // gen-matched particle (top/W/etc.)
   data.add<float>("fj_gen_pt", 0);
   data.add<float>("fj_gen_eta", 0);
@@ -83,8 +86,10 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_doubleb", 0);
 
   //flavor info
-  data.add<float>("fj_nbHadrons", 0);
-  data.add<float>("fj_ncHadrons", 0);
+  data.add<int>("fj_isBB", 0);
+  data.add<int>("fj_isNonBB", 0);
+  data.add<int>("fj_nbHadrons", 0);
+  data.add<int>("fj_ncHadrons", 0);
 
   //double-b inputs
   data.add<float>("fj_z_ratio", 0);
@@ -134,6 +139,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("fj_isW", genmatch.first == FatJetMatching::W);
   data.fill<int>("fj_isZ", genmatch.first == FatJetMatching::Z);
   data.fill<int>("fj_isH", genmatch.first == FatJetMatching::H);
+
+  // JMAR label
+  data.fill<int>("fj_labelJMAR", fjmatch_.flavorJMAR(&jet, *genParticlesHandle, 0.6).first);
 
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", genmatch.second ? genmatch.second->pt() : -999);
@@ -207,8 +215,10 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fj_doubleb", jet.bDiscriminator("pfBoostedDoubleSecondaryVertexAK8BJetTags"));
 
   //flavor info
-  data.fill<float>("fj_nbHadrons", jet.jetFlavourInfo().getbHadrons().size());
-  data.fill<float>("fj_ncHadrons", jet.jetFlavourInfo().getcHadrons().size());
+  data.fill<int>("fj_isBB", jet.jetFlavourInfo().getbHadrons().size() >= 2);
+  data.fill<int>("fj_isNonBB", jet.jetFlavourInfo().getbHadrons().size() < 2);
+  data.fill<int>("fj_nbHadrons", jet.jetFlavourInfo().getbHadrons().size());
+  data.fill<int>("fj_ncHadrons", jet.jetFlavourInfo().getcHadrons().size());
 
   //double-b inputs
   data.fill<float>("fj_z_ratio", vars.get(reco::btau::z_ratio));
