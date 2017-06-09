@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import argparse
+import logging
 
 parser = argparse.ArgumentParser(description='Create filelist for merging.\nFiles reserved for testing should be placed in *test_sample* directory!')
 parser.add_argument("inputdir", help="Input directory for a specific sample.")
@@ -12,7 +13,7 @@ train_val_files = []
 test_files = []
 
 for dp, dn, filenames in os.walk(args.inputdir):
-    if 'failed' in dp:
+    if 'failed' in dp or 'ignore' in dp:
         continue
     for f in filenames:
         if not f.endswith('.root'):
