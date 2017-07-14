@@ -135,7 +135,7 @@ public:
   }
 
   template<typename Type>
-  Type get(std::string name) {
+  Type get(std::string name) const {
     auto fullname = fullName(name);
     try {
       auto *tv=dynamic_cast<TreeVar<Type>*>(data.at(fullname));
@@ -147,7 +147,7 @@ public:
   }
 
   template<typename Type>
-  const std::vector<Type>& getMulti(std::string name){
+  const std::vector<Type>& getMulti(std::string name) const {
     auto fullname = fullName(name);
     try {
       auto *tv=dynamic_cast<TreeMultiVar<Type>*>(data.at(fullname));

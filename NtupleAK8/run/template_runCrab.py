@@ -9,6 +9,7 @@ config.General.transferLogs = False
 
 config.JobType.pluginName = 'Analysis'
 config.JobType.psetName = '_psetName_'
+# config.JobType.sendExternalFolder = True
 
 config.Data.inputDataset = '_inputDataset_'
 config.JobType.pyCfgParams = _pyCfgParams_

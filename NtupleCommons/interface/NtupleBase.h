@@ -52,6 +52,9 @@ public:
     return fill(jet, jetidx, jet_helper);
   }
 
+  // return tree data for reading
+  const TreeData& treeData() const { return data; }
+
 protected:
   // declare the data branches (name, type, default values)
   virtual void book() = 0;
