@@ -46,6 +46,15 @@ public:
     H = 4,
   };
 
+  enum FatJetLabel {
+    Invalid=0,
+    Top_all=10, Top_bcq, Top_bqq, Top_bc, Top_bq,
+    W_all=20, W_cq, W_qq,
+    Z_all=30, Z_bb, Z_cc, Z_qq,
+    H_all=40, H_bb, H_cc, H_qqqq,
+    QCD_all=50, QCD_bb, QCD_cc, QCD_b, QCD_c, QCD_others
+  };
+
 public:
   FatJetMatching() {}
   FatJetMatching(double jet_R, bool matchQuarks) : jetR_(jet_R), requiresQuarksContained_(matchQuarks) {}
@@ -55,11 +64,22 @@ public:
   std::pair<FatJetFlavor, const reco::GenParticle*> flavor(const pat::Jet *jet, const reco::GenParticleCollection& genParticles);
   std::pair<FatJetFlavor, const reco::GenParticle*> flavorJMAR(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double genRadius = 0.6);
 
+  std::pair<FatJetLabel, const reco::GenParticle*> flavorLabel(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double distR=0.6);
+
+private:
+  std::pair<FatJetLabel, const reco::GenParticle*> top_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR=0.6);
+  std::pair<FatJetLabel, const reco::GenParticle*> w_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR=0.6);
+  std::pair<FatJetLabel, const reco::GenParticle*> z_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR=0.6);
+  std::pair<FatJetLabel, const reco::GenParticle*> higgs_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR=0.6);
+  std::pair<FatJetLabel, const reco::GenParticle*> qcd_label(const pat::Jet *jet);
+
+
 private:
   void printGenInfoHeader() const;
   void printGenParticleInfo(const reco::GenParticle* genParticle, const int idx) const;
   const reco::GenParticle* getFinal(const reco::GenParticle* particle);
   bool isHadronic(const reco::GenParticle* particle) const;
+  std::vector<const reco::GenParticle*> getDaughterQuarks(const reco::GenParticle* particle);
   template <typename T>
   double maxDeltaRToDaughterQuarks(const T *center, const reco::GenParticle* mother) const {
     // mother particle needs to be the final version before decay

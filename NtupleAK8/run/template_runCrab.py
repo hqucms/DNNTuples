@@ -13,11 +13,13 @@ config.JobType.psetName = '_psetName_'
 
 config.Data.inputDataset = '_inputDataset_'
 config.JobType.pyCfgParams = _pyCfgParams_
+config.JobType.pyCfgParams += ['inputDataset=%s' % config.Data.inputDataset]
 # config.JobType.inputFiles = []
 
 config.Data.inputDBS = 'global'
 config.Data.splitting = 'FileBased'
 config.Data.unitsPerJob = _unitsPerJob_
+# config.Data.totalUnits = 10
 config.Data.outLFNDirBase = '_outLFNDirBase_'
 config.Data.publication = False
 #config.Data.allowNonValidInputDataset = True

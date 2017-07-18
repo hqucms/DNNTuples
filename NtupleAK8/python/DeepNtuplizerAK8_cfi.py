@@ -20,4 +20,5 @@ deepntuplizer = cms.EDAnalyzer('DeepNtuplizerAK8',
                                 fjTagInfoName = cms.string('pfBoostedDoubleSVAK8'),
                                 bDiscriminators = cms.vstring(),
                                 fjKeepFlavors = cms.untracked.vuint32(),
+                                isQCDSample   = cms.untracked.bool(False)
                                 )

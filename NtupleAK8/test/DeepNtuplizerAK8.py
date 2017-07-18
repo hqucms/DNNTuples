@@ -15,6 +15,11 @@ options.register('job', 0, VarParsing.multiplicity.singleton, VarParsing.varType
 options.register('nJobs', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int, "total jobs")
 options.register('fjKeepFlavors', [], VarParsing.multiplicity.list, VarParsing.varType.int, "Types of fatjet to keep in this sample")
 # options.register('gluonReduction', 0.0, VarParsing.multiplicity.singleton, VarParsing.varType.float, "gluon reduction")
+options.register('inputDataset',
+                 '',
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.string,
+                 "Input dataset")
 
 options.setupTags(tag='%d', ifCond='nJobs > 1', tagArg='job')
 options.parseArguments()
@@ -180,6 +185,7 @@ process.deepntuplizer.bDiscriminators.append('pfCombinedMVAV2BJetTags')
 process.deepntuplizer.LooseSVs = cms.InputTag("looseIVFinclusiveCandidateSecondaryVertices")
 
 process.deepntuplizer.fjKeepFlavors = cms.untracked.vuint32(options.fjKeepFlavors)
+process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
 
 # process.deepntuplizer.gluonReduction = cms.double(options.gluonReduction)
 

@@ -36,7 +36,11 @@ def parseConfig():
                 continue
 
             datasets.append(line)
-            samples.append(line.split('/')[1])
+            sname = line.split('/')[1]
+            r = re.search(r'(_ext[0-9]+)', line.split('/')[2])
+            if r:
+                sname += r.groups()[0]
+            samples.append(sname)
 
 os.system("mkdir -p %s" % args.jobdir)
 parseConfig()

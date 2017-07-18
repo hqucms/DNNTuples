@@ -15,6 +15,7 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   for (const auto &flv : iConfig.getUntrackedParameter<std::vector<unsigned>>("fjKeepFlavors", {})){
     keepFlavors_.push_back(static_cast<FatJetMatching::FatJetFlavor>(flv));
   }
+  isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
 }
 
 void FatJetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -24,11 +25,38 @@ void FatJetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup
 void FatJetInfoFiller::book() {
   // truth labels
   data.add<int>("fj_label", 0);
-  data.add<int>("fj_isLight", 0);
   data.add<int>("fj_isTop", 0);
   data.add<int>("fj_isW", 0);
   data.add<int>("fj_isZ", 0);
   data.add<int>("fj_isH", 0);
+  data.add<int>("fj_isQCD", 0);
+
+  data.add<int>("label_Top_bcq", 0);
+  data.add<int>("label_Top_bqq", 0);
+  data.add<int>("label_Top_bc",  0);
+  data.add<int>("label_Top_bq",  0);
+
+  data.add<int>("label_W_cq",    0);
+  data.add<int>("label_W_qq",    0);
+
+  data.add<int>("label_Z_bb",    0);
+  data.add<int>("label_Z_cc",    0);
+  data.add<int>("label_Z_qq",    0);
+
+  data.add<int>("label_H_bb",    0);
+  data.add<int>("label_H_cc",    0);
+  data.add<int>("label_H_qqqq",  0);
+
+  data.add<int>("label_QCD_bb",  0);
+  data.add<int>("label_QCD_cc",  0);
+  data.add<int>("label_QCD_b",   0);
+  data.add<int>("label_QCD_c",   0);
+  data.add<int>("label_QCD_others", 0);
+
+  data.add<int>("sample_isQCD", 0);
+
+  // legacy labels
+  data.add<int>("fj_labelLegacy", 0);
 
   // JMAR label
   data.add<int>("fj_labelJMAR", 0);
@@ -125,27 +153,55 @@ void FatJetInfoFiller::book() {
 
 bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
 
-  auto genmatch = fjmatch_.flavor(&jet, *genParticlesHandle);
-
-  // get only specific types of jet from a given sample
-  if (keepFlavors_.size() && std::find(keepFlavors_.begin(), keepFlavors_.end(), genmatch.first)==keepFlavors_.end()){
-    return false;
-  }
-
-  // truth labels
-  data.fill<int>("fj_label", genmatch.first);
-  data.fill<int>("fj_isLight", genmatch.first == FatJetMatching::Default);
-  data.fill<int>("fj_isTop", genmatch.first == FatJetMatching::Top);
-  data.fill<int>("fj_isW", genmatch.first == FatJetMatching::W);
-  data.fill<int>("fj_isZ", genmatch.first == FatJetMatching::Z);
-  data.fill<int>("fj_isH", genmatch.first == FatJetMatching::H);
+  // legacy label
+  data.fill<int>("fj_labelLegacy", fjmatch_.flavor(&jet, *genParticlesHandle).first);
 
   // JMAR label
   data.fill<int>("fj_labelJMAR", fjmatch_.flavorJMAR(&jet, *genParticlesHandle, 0.6).first);
 
+
+  // ----------------------------------------------------------------
+  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
+
+  data.fill<int>("fj_label", fjlabel.first);
+
+  data.fill<int>("fj_isTop", fjlabel.first >= FatJetMatching::Top_all && fjlabel.first < FatJetMatching::W_all);
+  data.fill<int>("fj_isW",   fjlabel.first >= FatJetMatching::W_all && fjlabel.first < FatJetMatching::Z_all);
+  data.fill<int>("fj_isZ",   fjlabel.first >= FatJetMatching::Z_all && fjlabel.first < FatJetMatching::H_all);
+  data.fill<int>("fj_isH",   fjlabel.first >= FatJetMatching::H_all && fjlabel.first < FatJetMatching::QCD_all);
+  data.fill<int>("fj_isQCD", fjlabel.first >= FatJetMatching::QCD_all);
+
+  data.fill<int>("label_Top_bcq", fjlabel.first == FatJetMatching::Top_bcq);
+  data.fill<int>("label_Top_bqq", fjlabel.first == FatJetMatching::Top_bqq);
+  data.fill<int>("label_Top_bc",  fjlabel.first == FatJetMatching::Top_bc);
+  data.fill<int>("label_Top_bq",  fjlabel.first == FatJetMatching::Top_bq);
+
+  data.fill<int>("label_W_cq",    fjlabel.first == FatJetMatching::W_cq);
+  data.fill<int>("label_W_qq",    fjlabel.first == FatJetMatching::W_qq);
+
+  data.fill<int>("label_Z_bb",    fjlabel.first == FatJetMatching::Z_bb);
+  data.fill<int>("label_Z_cc",    fjlabel.first == FatJetMatching::Z_cc);
+  data.fill<int>("label_Z_qq",    fjlabel.first == FatJetMatching::Z_qq);
+
+  data.fill<int>("label_H_bb",    fjlabel.first == FatJetMatching::H_bb);
+  data.fill<int>("label_H_cc",    fjlabel.first == FatJetMatching::H_cc);
+  data.fill<int>("label_H_qqqq",  fjlabel.first == FatJetMatching::H_qqqq);
+
+  data.fill<int>("label_QCD_bb",  fjlabel.first == FatJetMatching::QCD_bb);
+  data.fill<int>("label_QCD_cc",  fjlabel.first == FatJetMatching::QCD_cc);
+  data.fill<int>("label_QCD_b",   fjlabel.first == FatJetMatching::QCD_b);
+  data.fill<int>("label_QCD_c",   fjlabel.first == FatJetMatching::QCD_c);
+  data.fill<int>("label_QCD_others", fjlabel.first == FatJetMatching::QCD_others);
+
+  data.fill<int>("sample_isQCD",  isQCDSample_);
+
+
   // gen-matched particle (top/W/etc.)
-  data.fill<float>("fj_gen_pt", genmatch.second ? genmatch.second->pt() : -999);
-  data.fill<float>("fj_gen_eta", genmatch.second ? genmatch.second->eta() : -999);
+  data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
+  data.fill<float>("fj_gen_eta", fjlabel.second ? fjlabel.second->eta() : -999);
+  // ----------------------------------------------------------------
+
+
 
   // fatjet kinematics
   data.fill<float>("fj_pt", jet.pt());
