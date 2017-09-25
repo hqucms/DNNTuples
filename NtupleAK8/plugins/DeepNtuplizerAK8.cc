@@ -21,6 +21,7 @@
 #include "DeepNTuples/NtupleAK8/interface/PFCandidateFiller.h"
 #include "DeepNTuples/NtupleAK8/interface/TrackFiller.h"
 #include "DeepNTuples/NtupleAK8/interface/SVFiller.h"
+#include "DeepNTuples/NtupleAK8/interface/PFCompleteFiller.h"
 
 
 using namespace deepntuples;
@@ -72,6 +73,9 @@ DeepNtuplizerAK8::DeepNtuplizerAK8(const edm::ParameterSet& iConfig):
 
   SVFiller *sv = new SVFiller("", jetR);
   addModule(sv);
+
+  PFCompleteFiller *parts = new PFCompleteFiller("", jetR);
+  addModule(parts);
 
   // read config and init modules
   for(auto& m: modules_)

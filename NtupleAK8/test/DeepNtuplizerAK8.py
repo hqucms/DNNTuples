@@ -184,10 +184,34 @@ process.load("DeepNTuples.NtupleAK8.DeepNtuplizerAK8_cfi")
 process.deepntuplizer.jets = cms.InputTag('selectedUpdatedPatJetsDeepFlavour')
 process.deepntuplizer.bDiscriminators = bTagDiscriminators 
 process.deepntuplizer.bDiscriminators.append('pfCombinedMVAV2BJetTags')
-process.deepntuplizer.LooseSVs = cms.InputTag("looseIVFinclusiveCandidateSecondaryVertices")
 
 process.deepntuplizer.fjKeepFlavors = cms.untracked.vuint32(options.fjKeepFlavors)
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
+#==============================================================================================================================#
+# Electron ID, following prescription in
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+# set up everything that is needed to compute electron IDs and
+# add the ValueMaps with ID decisions into the event data stream
+
+# Load tools and function definitions
+from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+
+switchOnVIDElectronIdProducer(process, DataFormat.MiniAOD)
+
+# Define which IDs we want to produce
+my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff']
+
+# Add them to the VID producer
+for idmod in my_id_modules:
+    setupAllVIDIdsInModule(process, idmod, setupVIDElectronSelection)
+
+# Set ID tags
+process.deepntuplizer.eleVetoIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-veto")
+process.deepntuplizer.eleLooseIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose")
+process.deepntuplizer.eleMediumIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-medium")
+process.deepntuplizer.eleTightIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight")
+
+# ---------------------------------------------------------
 
 # process.deepntuplizer.gluonReduction = cms.double(options.gluonReduction)
 
