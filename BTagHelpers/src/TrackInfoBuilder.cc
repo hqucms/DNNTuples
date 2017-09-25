@@ -11,6 +11,25 @@ namespace deepntuples {
 void TrackInfoBuilder::buildTrackInfo(const edm::ESHandle<TransientTrackBuilder> builder,
     const pat::PackedCandidate &pfcand, const pat::Jet &jet, const reco::Vertex& pv) {
 
+  const auto* bestTrk = pfcand.bestTrack();
+  if (!bestTrk){
+    trackMomentum_ = 0;
+    trackEta_ = 0;
+    trackEtaRel_ = 0;
+    trackPtRel_ = 0;
+    trackPPar_ = 0;
+    trackDeltaR_ = 0;
+    trackPtRatio_ = 0;
+    trackPParRatio_ = 0;
+    trackSip2dVal_ = 0;
+    trackSip2dSig_ = 0;
+    trackSip3dVal_ = 0;
+    trackSip3dSig_ = 0;
+    trackJetDistVal_ = 0;
+    trackJetDistSig_ = 0;
+    return;
+  }
+
   // DataFormats/BTauReco/interface/IPTagInfo.h
 
   math::XYZVector jetDir = jet.momentum().Unit();

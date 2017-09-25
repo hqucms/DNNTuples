@@ -149,26 +149,40 @@ bool TrackFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_
 
     // impact parameters
     data.fillMulti<float>("track_dz", catchInfs(cpf->dz()));
-    data.fillMulti<float>("track_dzsig", catchInfs(cpf->dz()/cpf->dzError()));
+    data.fillMulti<float>("track_dzsig", cpf->bestTrack() ? catchInfs(cpf->dz()/cpf->dzError()) : 0);
     data.fillMulti<float>("track_dxy", catchInfs(cpf->dxy()));
-    data.fillMulti<float>("track_dxysig", catchInfs(cpf->dxy()/cpf->dxyError()));
+    data.fillMulti<float>("track_dxysig", cpf->bestTrack() ? catchInfs(cpf->dxy()/cpf->dxyError()) : 0);
 
-    const auto &trk = cpf->pseudoTrack();
-    data.fillMulti<float>("track_normchi2", catchInfs(trk.normalizedChi2()));
-    data.fillMulti<float>("track_quality", trk.qualityMask());
+    if (cpf->bestTrack()){
+      const auto *trk = cpf->bestTrack();
+      data.fillMulti<float>("track_normchi2", catchInfs(trk->normalizedChi2()));
+      data.fillMulti<float>("track_quality", trk->qualityMask());
 
-    // track covariance
-    auto cov = [&](unsigned i, unsigned j) {
-      return catchInfs(trk.covariance(i, j));
-    };
-    data.fillMulti<float>("track_dptdpt", cov(0,0));
-    data.fillMulti<float>("track_detadeta", cov(1,1));
-    data.fillMulti<float>("track_dphidphi", cov(2,2));
-    data.fillMulti<float>("track_dxydxy", cov(3,3));
-    data.fillMulti<float>("track_dzdz", cov(4,4));
-    data.fillMulti<float>("track_dxydz", cov(3,4));
-    data.fillMulti<float>("track_dphidxy", cov(2,3));
-    data.fillMulti<float>("track_dlambdadz", cov(1,4));
+      // track covariance
+      auto cov = [&](unsigned i, unsigned j) {
+        return catchInfs(trk->covariance(i, j));
+      };
+      data.fillMulti<float>("track_dptdpt", cov(0,0));
+      data.fillMulti<float>("track_detadeta", cov(1,1));
+      data.fillMulti<float>("track_dphidphi", cov(2,2));
+      data.fillMulti<float>("track_dxydxy", cov(3,3));
+      data.fillMulti<float>("track_dzdz", cov(4,4));
+      data.fillMulti<float>("track_dxydz", cov(3,4));
+      data.fillMulti<float>("track_dphidxy", cov(2,3));
+      data.fillMulti<float>("track_dlambdadz", cov(1,4));
+    }else{
+      data.fillMulti<float>("track_normchi2", 999);
+      data.fillMulti<float>("track_quality", 0);
+
+      data.fillMulti<float>("track_dptdpt", 0);
+      data.fillMulti<float>("track_detadeta", 0);
+      data.fillMulti<float>("track_dphidphi", 0);
+      data.fillMulti<float>("track_dxydxy", 0);
+      data.fillMulti<float>("track_dzdz", 0);
+      data.fillMulti<float>("track_dxydz", 0);
+      data.fillMulti<float>("track_dphidxy", 0);
+      data.fillMulti<float>("track_dlambdadz", 0);
+    }
 
     const auto &trkinfo = trackInfoMap.at(cpf);
     data.fillMulti<float>("trackBTag_Momentum", trkinfo.getTrackMomentum());

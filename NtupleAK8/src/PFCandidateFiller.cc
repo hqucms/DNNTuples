@@ -45,17 +45,6 @@ void PFCandidateFiller::book() {
   // for neutral
   data.addMulti<float>("pfcand_hcalFrac");
 
-  // for charged
-  data.addMulti<float>("pfcand_VTX_ass");
-  data.addMulti<float>("pfcand_fromPV");
-  data.addMulti<float>("pfcand_lostInnerHits");
-
-  // impact parameters
-  data.addMulti<float>("pfcand_dz");
-  data.addMulti<float>("pfcand_dzsig");
-  data.addMulti<float>("pfcand_dxy");
-  data.addMulti<float>("pfcand_dxysig");
-
 }
 
 bool PFCandidateFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
@@ -98,17 +87,6 @@ bool PFCandidateFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper
 
     // for neutral
     data.fillMulti<float>("pfcand_hcalFrac", pfcand->hcalFraction());
-
-    // for charged
-    data.fillMulti<float>("pfcand_VTX_ass", pfcand->pvAssociationQuality());
-    data.fillMulti<float>("pfcand_fromPV", pfcand->fromPV());
-    data.fillMulti<float>("pfcand_lostInnerHits", pfcand->lostInnerHits());
-
-    // impact parameters
-    data.fillMulti<float>("pfcand_dz", catchInfs(pfcand->dz()));
-    data.fillMulti<float>("pfcand_dzsig", catchInfs(pfcand->dz()/pfcand->dzError()));
-    data.fillMulti<float>("pfcand_dxy", catchInfs(pfcand->dxy()));
-    data.fillMulti<float>("pfcand_dxysig", catchInfs(pfcand->dxy()/pfcand->dxyError()));
 
   }
 
