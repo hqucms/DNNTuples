@@ -109,3 +109,27 @@ void JetHelper::initializeConstituents() {
 }
 
 } /* namespace deepntuples */
+
+double deepntuples::JetHelper::getCorrectedPuppiSoftDropMass() const {
+  try{
+    auto puppisubjets = jet_->subjets("SoftDropPuppi");
+    double sdpuppimass = 0;
+    if (puppisubjets.size()==1){
+      sdpuppimass = puppisubjets[0]->correctedP4(0).mass();
+    }else if (puppisubjets.size()>=2){
+      sdpuppimass = (puppisubjets[0]->correctedP4(0) + puppisubjets[1]->correctedP4(0)).mass();
+    }
+    double pt = jet_->pt();
+    double eta = jet_->eta();
+    double gencorr = 1.006261 + ((-1.061605) * pow(pt*0.079990,-1.204538));
+    double recocorr = 1;
+    if (std::abs(eta) <= 1.3){
+      recocorr = 1.093020+(-0.000150068)*pt+(3.44866e-07)*pow(pt,2)+(-2.68100e-10)*pow(pt,3)+(8.67440e-14)*pow(pt,4)+(-1.00114e-17)*pow(pt,5);
+    }else{
+      recocorr = 1.272115+(-0.000571640)*pt+(8.37289e-07)*pow(pt,2)+(-5.20433e-10)*pow(pt,3)+(1.45375e-13)*pow(pt,4)+(-1.50389e-17)*pow(pt,5);
+    }
+    return sdpuppimass*gencorr*recocorr;
+  }catch(const cms::Exception &e){
+    return -1;
+  }
+}

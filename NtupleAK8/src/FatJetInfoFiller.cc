@@ -60,6 +60,10 @@ void FatJetInfoFiller::book() {
 
   // JMAR label
   data.add<int>("fj_labelJMAR", 0);
+  data.add<float>("fjJMAR_gen_pt", 0);
+  data.add<float>("fjJMAR_gen_eta", 0);
+  data.add<float>("fjJMAR_gen_phi", 0);
+  data.add<int>("fjJMAR_gen_pdgid", 0);
 
   // gen-matched particle (top/W/etc.)
   data.add<float>("fj_gen_pt", 0);
@@ -80,6 +84,11 @@ void FatJetInfoFiller::book() {
 
   // soft drop
   data.add<float>("fj_sdmass", 0);
+
+  // puppi
+  data.add<float>("fjPuppi_tau21", 0);
+  data.add<float>("fjPuppi_tau32", 0);
+  data.add<float>("fjPuppi_corrsdmass", 0);
 
   // subjets: soft drop gives up to 2 subjets
   data.add<float>("fj_n_sdsubjets", 0);
@@ -157,8 +166,14 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("fj_labelLegacy", fjmatch_.flavor(&jet, *genParticlesHandle).first);
 
   // JMAR label
-  data.fill<int>("fj_labelJMAR", fjmatch_.flavorJMAR(&jet, *genParticlesHandle, 0.6).first);
-
+  {
+    auto jmar = fjmatch_.flavorJMAR(&jet, *genParticlesHandle, 0.6);
+    data.fill<int>("fj_labelJMAR", jmar.first);
+    data.fill<float>("fjJMAR_gen_pt", jmar.second ? jmar.second->pt() : -999);
+    data.fill<float>("fjJMAR_gen_eta", jmar.second ? jmar.second->eta() : -999);
+    data.fill<float>("fjJMAR_gen_phi", jmar.second ? jmar.second->phi() : -999);
+    data.fill<int>("fjJMAR_gen_pdgid", jmar.second ? jmar.second->pdgId() : -999);
+  }
 
   // ----------------------------------------------------------------
   auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
@@ -221,6 +236,14 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   // soft drop
   data.fill<float>("fj_sdmass", jet.userFloat("ak8PFJetsCHSSoftDropMass"));
+
+  // puppi
+  float puppi_tau1 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau1");
+  float puppi_tau2 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau2");
+  float puppi_tau3 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau3");
+  data.fill<float>("fjPuppi_tau21", puppi_tau1 > 0 ? puppi_tau2/puppi_tau1 : 1.01);
+  data.fill<float>("fjPuppi_tau32", puppi_tau2 > 0 ? puppi_tau3/puppi_tau2 : 1.01);
+  data.fill<float>("fjPuppi_corrsdmass", jet_helper.getCorrectedPuppiSoftDropMass());
 
   // subjets: soft drop gives up to 2 subjets
   const auto& subjets = jet_helper.getSubJets();

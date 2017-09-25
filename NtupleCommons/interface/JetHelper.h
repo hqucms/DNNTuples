@@ -28,6 +28,8 @@ public:
 
   const std::vector<const pat::Jet*>& getSubJets() const { return subjets_; }
 
+  double getCorrectedPuppiSoftDropMass() const; // tmp
+
   // quark/gluon discrimination variables
   double ptD()   const { return ptD_;          }
   double axis1() const { return axis1_;        }

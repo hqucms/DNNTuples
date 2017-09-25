@@ -281,7 +281,27 @@ std::pair<FatJetMatching::FatJetFlavor, const reco::GenParticle*> FatJetMatching
   if (genParticles.size() != processed_.size())
     throw std::logic_error("[FatJetMatching::flavor] Not all genParticles are processed!");
 
-  return std::make_pair(FatJetFlavor::Default, nullptr);
+  const reco::GenParticle *parton = nullptr;
+  double minDR = 999;
+  for (const auto &gp : genParticles){
+    if (gp.status() != 23) continue;
+    auto pdgid = std::abs(gp.pdgId());
+    if (!(pdgid<ParticleID::p_t || pdgid==ParticleID::p_g)) continue;
+    auto dr = reco::deltaR(gp, *jet);
+    if (dr<genRadius && dr<minDR){
+      minDR = dr;
+      parton = &gp;
+    }
+  }
+  if (debug_){
+    using namespace std;
+    if (parton){
+      cout << "parton"; printGenParticleInfo(parton, -1);
+      cout << "dr(jet, parton): " << minDR << endl;
+    }
+  }
+
+  return std::make_pair(FatJetFlavor::Default, parton);
 
 }
 

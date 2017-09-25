@@ -99,11 +99,11 @@ void DeepNtuplizerAK8::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   for (unsigned idx=0; idx<jets->size(); ++idx){
     bool write_ = true;
 
-    const auto jet = jets->at(idx).correctedJet("Uncorrected"); // undo the JECs
+    const auto jet = jets->at(idx); // undo the JECs
     JetHelper jet_helper(&jet);
 
     for (auto *m : modules_){
-      if (!m->fillBranches(jet, idx, jet_helper)){
+      if (!m->fillBranches(jet.correctedJet("Uncorrected"), idx, jet_helper)){
         write_ = false;
         break;
       }
