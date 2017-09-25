@@ -176,7 +176,8 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   }
 
   // ----------------------------------------------------------------
-  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
+//  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
+  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.8);
 
   data.fill<int>("fj_label", fjlabel.first);
 
