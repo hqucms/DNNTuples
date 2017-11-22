@@ -29,9 +29,7 @@ To check all the options of the submission script, run
 ```
 
 You can set arguments to be passed to the cmsRun job in the beginning of the sample.conf file, e.g.,
-```
-fjKeepFlavors=2,3,4   # only keep fatjets whose labels match to the given number. 0:Light, 1:Top, 2:W, 3:Z, 4:Higgs 
-```
+~~fjKeepFlavors=2,3,4   # only keep fatjets whose labels match to the given number. 0:Light, 1:Top, 2:W, 3:Z, 4:Higgs~~
  
 ## Merge outputs (with random mixing of different samples)
 
