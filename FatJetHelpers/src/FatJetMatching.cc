@@ -45,7 +45,7 @@ std::pair<FatJetMatching::FatJetFlavor, const reco::GenParticle*> FatJetMatching
           w_from_top = getFinal(&(*dau));
         }else if (std::abs(dau->pdgId()) <= ParticleID::p_b){
           // ! use <= p_b ! -- can also have charms etc.
-          b_from_top = getFinal(&(*dau));
+          b_from_top = dynamic_cast<const reco::GenParticle*>(&(*dau));
         }
       }
       if (!w_from_top || !b_from_top) throw std::logic_error("[FatJetMatching::flavor] Cannot find b or W from top decay: "+std::to_string(ipart));
@@ -184,7 +184,8 @@ std::pair<FatJetMatching::FatJetFlavor, const reco::GenParticle*> FatJetMatching
           w_from_top = getFinal(&(*dau));
         }else if (std::abs(dau->pdgId()) <= ParticleID::p_b){
           // ! use <= p_b ! -- can also have charms etc.
-          b_from_top = getFinal(&(*dau));
+          // for quarks use the first one in the decay chain
+          b_from_top = dynamic_cast<const reco::GenParticle*>(&(*dau));
         }
       }
       if (!w_from_top || !b_from_top) throw std::logic_error("[FatJetMatching::flavor] Cannot find b or W from top decay: "+std::to_string(ipart));
@@ -217,6 +218,24 @@ std::pair<FatJetMatching::FatJetFlavor, const reco::GenParticle*> FatJetMatching
           cout << "deltaR(w, w_daus)  : " << dr_w << endl;
         }
         if (dr_w < genRadius && dr_jet_w < genRadius) return std::make_pair(FatJetFlavor::W, w_from_top);
+      }
+    }else if (pdgid == ParticleID::p_h0) {
+      // Higgs
+      auto h = getFinal(gp);
+      if (isHadronic(h)) {
+        if (debug_){
+          using namespace std;
+          cout << "jet: " << jet->polarP4() << endl;
+          cout << "H:   "; printGenParticleInfo(h, -1);
+        }
+        double dr_jet_h = reco::deltaR(jet->p4(), h->p4());
+        double dr_hdaus = maxDeltaRToDaughterQuarks(h, h); // only works for h->bb??
+        if (debug_){
+          using namespace std;
+          cout << "deltaR(jet, H)   : " << dr_jet_h << endl;
+          cout << "deltaR(h, h daus): " << dr_hdaus << endl;
+        }
+        if (dr_hdaus < genRadius && dr_jet_h < genRadius) return std::make_pair(FatJetFlavor::H, h);
       }
     }else if (pdgid == ParticleID::p_Wplus){
       // W: not from top, or top not in jet cone
@@ -254,24 +273,6 @@ std::pair<FatJetMatching::FatJetFlavor, const reco::GenParticle*> FatJetMatching
           cout << "deltaR(Z, Z daus): " << dr_zdaus << endl;
         }
         if (dr_zdaus < genRadius && dr_jet_z < genRadius) return std::make_pair(FatJetFlavor::Z, z);
-      }
-    }else if (pdgid == ParticleID::p_h0) {
-      // Higgs
-      auto h = getFinal(gp);
-      if (isHadronic(h)) {
-        if (debug_){
-          using namespace std;
-          cout << "jet: " << jet->polarP4() << endl;
-          cout << "H:   "; printGenParticleInfo(h, -1);
-        }
-        double dr_jet_h = reco::deltaR(jet->p4(), h->p4());
-        double dr_hdaus = maxDeltaRToDaughterQuarks(h, h);
-        if (debug_){
-          using namespace std;
-          cout << "deltaR(jet, H)   : " << dr_jet_h << endl;
-          cout << "deltaR(h, h daus): " << dr_hdaus << endl;
-        }
-        if (dr_hdaus < genRadius && dr_jet_h < genRadius) return std::make_pair(FatJetFlavor::H, h);
       }
     }else {
       // ?
@@ -334,18 +335,18 @@ std::pair<FatJetMatching::FatJetLabel, const reco::GenParticle*> FatJetMatching:
       if (result.first != FatJetLabel::Invalid){
         return result;
       }
+    }else if (pdgid == ParticleID::p_h0){
+      auto result = higgs_label(jet, gp, distR);
+      if (result.first != FatJetLabel::Invalid){
+        return result;
+      }
     }else if (pdgid == ParticleID::p_Wplus){
       auto result = w_label(jet, gp, distR);
       if (result.first != FatJetLabel::Invalid){
         return result;
       }
-    }else if (pdgid == ParticleID::p_Z0) {
+    }else if (pdgid == ParticleID::p_Z0){
       auto result = z_label(jet, gp, distR);
-      if (result.first != FatJetLabel::Invalid){
-        return result;
-      }
-    }else if (pdgid == ParticleID::p_h0) {
-      auto result = higgs_label(jet, gp, distR);
       if (result.first != FatJetLabel::Invalid){
         return result;
       }
@@ -445,7 +446,7 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
       w_from_top = getFinal(&(*dau));
     }else if (std::abs(dau->pdgId()) <= ParticleID::p_b){
       // ! use <= p_b ! -- can also have charms etc.
-      b_from_top = getFinal(&(*dau));
+      b_from_top = dynamic_cast<const reco::GenParticle*>(&(*dau));
     }
   }
   if (!w_from_top || !b_from_top) throw std::logic_error("[FatJetMatching::top_label] Cannot find b or W from top decay!");
@@ -622,25 +623,30 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
   }
 
   bool is_hVV = false;
-  for (const auto &p : higgs->daughterRefVector()){
-    auto pdgid = std::abs(p->pdgId());
-    if (pdgid == ParticleID::p_Wplus || pdgid == ParticleID::p_Z0){
-      is_hVV = true;
-      break;
+  if (higgs->numberOfDaughters() >= 3) {
+    // e.g., h->Vqq or h->qqqq
+    is_hVV = true;
+  }else {
+    // e.g., h->VV*
+    for (const auto &p : higgs->daughterRefVector()){
+      auto pdgid = std::abs(p->pdgId());
+      if (pdgid == ParticleID::p_Wplus || pdgid == ParticleID::p_Z0){
+        is_hVV = true;
+        break;
+      }
     }
   }
 
   if (is_hVV){
     // h->WW or h->ZZ
-    // only one W/Z in higgs daughters
     std::vector<const reco::GenParticle*> hVV_daus;
     for (unsigned idau=0; idau<higgs->numberOfDaughters(); ++idau){
-      const auto *dau = getFinal(dynamic_cast<const reco::GenParticle*>(higgs->daughter(idau)));
+      const auto *dau = dynamic_cast<const reco::GenParticle*>(higgs->daughter(idau));
       auto pdgid = std::abs(higgs->daughter(idau)->pdgId());
       if (pdgid >= ParticleID::p_d && pdgid <= ParticleID::p_b){
         hVV_daus.push_back(dau);
       }else{
-        const auto d = getDaughterQuarks(dau);
+        const auto d = getDaughterQuarks(getFinal(dau));
         hVV_daus.insert(hVV_daus.end(), d.begin(), d.end());
       }
     }
