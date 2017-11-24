@@ -39,6 +39,7 @@ private:
   FatJetMatching fjmatch_;
   std::vector<FatJetMatching::FatJetFlavor> keepFlavors_;
   bool isQCDSample_ = false;
+  bool isTrainSample_ = false;
 
   std::string fjTagInfoName;
 

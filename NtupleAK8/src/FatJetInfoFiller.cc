@@ -16,6 +16,7 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
     keepFlavors_.push_back(static_cast<FatJetMatching::FatJetFlavor>(flv));
   }
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
+  isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
 }
 
 void FatJetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -55,8 +56,8 @@ void FatJetInfoFiller::book() {
 
   data.add<int>("sample_isQCD", 0);
 
-  // legacy labels
-  data.add<int>("fj_labelLegacy", 0);
+//  // legacy labels
+//  data.add<int>("fj_labelLegacy", 0);
 
   // JMAR label
   data.add<int>("fj_labelJMAR", 0);
@@ -162,8 +163,8 @@ void FatJetInfoFiller::book() {
 
 bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
 
-  // legacy label
-  data.fill<int>("fj_labelLegacy", fjmatch_.flavor(&jet, *genParticlesHandle).first);
+//  // legacy label
+//  data.fill<int>("fj_labelLegacy", fjmatch_.flavor(&jet, *genParticlesHandle).first);
 
   // JMAR label
   {
@@ -186,6 +187,10 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("fj_isZ",   fjlabel.first >= FatJetMatching::Z_all && fjlabel.first < FatJetMatching::H_all);
   data.fill<int>("fj_isH",   fjlabel.first >= FatJetMatching::H_all && fjlabel.first < FatJetMatching::QCD_all);
   data.fill<int>("fj_isQCD", fjlabel.first >= FatJetMatching::QCD_all);
+
+  // veto unmatched jets in signal samples for training
+  if (isTrainSample_ && !isQCDSample_ && fjlabel.first >= FatJetMatching::QCD_all)
+    return false;
 
   data.fill<int>("label_Top_bcq", fjlabel.first == FatJetMatching::Top_bcq);
   data.fill<int>("label_Top_bqq", fjlabel.first == FatJetMatching::Top_bqq);
