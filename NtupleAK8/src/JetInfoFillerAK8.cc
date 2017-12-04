@@ -72,6 +72,7 @@ bool JetInfoFillerAK8::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   auto flavor = flavorDef.jet_flavour(jet);
   data.fill<int>("isB", flavor==JetFlavor::B);
   data.fill<int>("isBB", flavor==JetFlavor::BB);
+  data.fill<int>("isCC", flavor==JetFlavor::CC);
   data.fill<int>("isLeptonicB", flavor==JetFlavor::LeptonicB);
   data.fill<int>("isLeptonicB_C", flavor==JetFlavor::LeptonicB_C);
   data.fill<int>("isC", flavor==JetFlavor::C);
@@ -137,6 +138,7 @@ void JetInfoFillerAK8::book() {
 
   data.add<int>("isB", 0);
   data.add<int>("isBB", 0);
+  data.add<int>("isCC", 0);
   data.add<int>("isLeptonicB", 0);
   data.add<int>("isLeptonicB_C", 0);
   data.add<int>("isC", 0);

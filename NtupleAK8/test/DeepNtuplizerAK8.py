@@ -6,13 +6,13 @@ from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
-options.inputFiles = '/store/mc/RunIISummer16MiniAODv2/TTJets_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/110000/48E7598C-A7E6-E611-8092-002590DE6E76.root'
+options.inputFiles = 'file:/eos/user/a/anovak/022C3683-D4AB-E611-AC4D-3417EBE70078.root'  #include file: for local files, for catalogues /store...
 options.maxEvents = -1
 
 options.register('inputScript', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "input Script")
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
 options.register('job', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "job number")
-options.register('nJobs', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int, "total jobs")
+options.register('nJobs', 2, VarParsing.multiplicity.singleton, VarParsing.varType.int, "total jobs")
 options.register('fjKeepFlavors', [], VarParsing.multiplicity.list, VarParsing.varType.int, "Types of fatjet to keep in this sample")
 # options.register('gluonReduction', 0.0, VarParsing.multiplicity.singleton, VarParsing.varType.float, "gluon reduction")
 options.register('inputDataset',
@@ -35,7 +35,7 @@ if not options.inputScript:  # this is probably for testing
 
 process.options = cms.untracked.PSet(
    allowUnscheduled = cms.untracked.bool(True),  
-   wantSummary=cms.untracked.bool(False)
+   wantSummary=cms.untracked.bool(True)
 )
 
 print ('Using output file ' + options.outputFile)
@@ -57,6 +57,7 @@ numberOfFiles = len(process.source.fileNames)
 numberOfJobs = options.nJobs
 jobNumber = options.job
 
+print jobNumber
 process.source.fileNames = process.source.fileNames[jobNumber:numberOfFiles:numberOfJobs]
 if options.nJobs > 1:
     print ("running over these files:")

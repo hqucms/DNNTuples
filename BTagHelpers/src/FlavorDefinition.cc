@@ -61,7 +61,8 @@ JetFlavor FlavorDefinition::jet_flavour(const pat::Jet& jet, bool usePhysForLigh
     }
   }
   else if(hflav == 4) { //C jet
-    return JetFlavor::C;
+    if(ncs > 1) return JetFlavor::CC;
+    else return JetFlavor::C;
   }
   else { //not a heavy jet
     if(std::abs(pflav) == 4 || std::abs(pflav) == 5 || nbs || ncs) {

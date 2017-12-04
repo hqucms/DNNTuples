@@ -15,7 +15,7 @@
 
 namespace deepntuples {
 
-enum JetFlavor {UNDEFINED, G, UD, S, C, B, BB, LeptonicB, LeptonicB_C};
+enum JetFlavor {UNDEFINED, G, UD, S, C, CC,  B, BB, LeptonicB, LeptonicB_C};
 
 class FlavorDefinition {
 public:
