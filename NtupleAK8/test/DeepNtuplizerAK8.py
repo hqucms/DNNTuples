@@ -5,13 +5,13 @@ import FWCore.ParameterSet.Config as cms
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
-options.outputFile = 'output_bb_official.root'
+options.outputFile = 'output_bulk.root'
 #options.inputFiles = 'file:/eos/user/a/anovak/022C3683-D4AB-E611-AC4D-3417EBE70078.root'  #include file: for local files, for catalogues /store...
 #options.inputFiles = 'file:/afs/cern.ch/work/l/lmastrol/public/deep-c_tagging/HIG-RunIISummer16MiniAODv2-04133.root'
-#options.inputFiles = 'file:/afs/cern.ch/work/l/lmastrol/public/deep-c_tagging/BulkGravHH4C-RunIISummer16MiniAODv2.root'
+options.inputFiles = 'file:/afs/cern.ch/work/l/lmastrol/public/deep-c_tagging/BulkGravHH4C_M1000-RunIISummer16MiniAODv2.root'
 #options.inputFiles = 'file:/eos/user/a/anovak/DNNtuples/CMSSW_8_0_28/src/DeepNTuples/00D74F9D-9D14-E711-A4C0-1866DA879444.root'
 #options.inputFiles = 'file:/afs/cern.ch/work/l/lmastrol/public/deep-c_tagging/GluGluHToCC_official_highStat_0219759C-1DD6-E711-BCCA-02163E0144F7.root'
-options.inputFiles = 'file:/afs/cern.ch/work/l/lmastrol/public/deep-c_tagging/GluGluHToBB_official_highStat_E6E6BC68-F543-E611-AB6F-003048CD716E.root'
+#options.inputFiles = 'file:/afs/cern.ch/work/l/lmastrol/public/deep-c_tagging/GluGluHToBB_official_highStat_E6E6BC68-F543-E611-AB6F-003048CD716E.root'
 options.maxEvents = -1
 
 options.register('inputScript', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "input Script")
