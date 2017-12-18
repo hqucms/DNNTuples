@@ -110,9 +110,8 @@ void JetHelper::initializeConstituents() {
 
 } /* namespace deepntuples */
 
-double deepntuples::JetHelper::getCorrectedPuppiSoftDropMass() const {
+std::pair<double, double> deepntuples::JetHelper::getCorrectedPuppiSoftDropMass(const pat::JetPtrCollection &puppisubjets) const {
   try{
-    auto puppisubjets = jet_->subjets("SoftDropPuppi");
     double sdpuppimass = 0;
     if (puppisubjets.size()==1){
       sdpuppimass = puppisubjets[0]->correctedP4(0).mass();
@@ -128,8 +127,8 @@ double deepntuples::JetHelper::getCorrectedPuppiSoftDropMass() const {
     }else{
       recocorr = 1.272115+(-0.000571640)*pt+(8.37289e-07)*pow(pt,2)+(-5.20433e-10)*pow(pt,3)+(1.45375e-13)*pow(pt,4)+(-1.50389e-17)*pow(pt,5);
     }
-    return sdpuppimass*gencorr*recocorr;
+    return std::make_pair(sdpuppimass, sdpuppimass*gencorr*recocorr);
   }catch(const cms::Exception &e){
-    return -1;
+    return std::make_pair(-1, -1);
   }
 }

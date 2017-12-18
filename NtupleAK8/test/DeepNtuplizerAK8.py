@@ -77,113 +77,62 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '80X_mcRun2_asymptotic_2016_Tra
 print 'Using global tag', process.GlobalTag.globaltag
 
 # ---------------------------------------------------------
+usePuppi = False
 
 bTagInfos = [
-	'pfImpactParameterTagInfos',
-	'pfInclusiveSecondaryVertexFinderTagInfos',
-	'pfDeepCSVTagInfos',
-	'pfBoostedDoubleSVAK8TagInfos'
+    'pfBoostedDoubleSVAK8TagInfos'
 ]
 
 bTagDiscriminators = [
-	'softPFMuonBJetTags',
-	'softPFElectronBJetTags',
-	'pfJetBProbabilityBJetTags',
-	'pfJetProbabilityBJetTags',
-	'pfCombinedInclusiveSecondaryVertexV2BJetTags',
-	'pfDeepCSVJetTags:probudsg',
-	'pfDeepCSVJetTags:probb',
-	'pfDeepCSVJetTags:probc',
-	'pfDeepCSVJetTags:probbb',
-	'pfDeepCSVJetTags:probcc',
-	'pfBoostedDoubleSecondaryVertexAK8BJetTags'
+    'pfCombinedInclusiveSecondaryVertexV2BJetTags',
+    'pfBoostedDoubleSecondaryVertexAK8BJetTags'
 ]
 
-jetCorrectionsAK8 = ('AK8PFchs', ['L1FastJet', 'L2Relative', 'L3Absolute'], 'None')
+if usePuppi:
+    JETCorrLevels = ['L2Relative', 'L3Absolute']
 
-from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
-updateJetCollection(
-        process,
-        labelName = "DeepFlavour",
-        jetSource = cms.InputTag('slimmedJetsAK8'),
-        jetCorrections = jetCorrectionsAK8,
-        pfCandidates = cms.InputTag('packedPFCandidates'),
-        pvSource = cms.InputTag("offlineSlimmedPrimaryVertices"),
-        svSource = cms.InputTag('slimmedSecondaryVertices'),
-        muSource = cms.InputTag('slimmedMuons'),
-        elSource = cms.InputTag('slimmedElectrons'),
-        btagInfos = bTagInfos,
-        btagDiscriminators = bTagDiscriminators,
-        explicitJTA = False
-)
-
-if hasattr(process,'updatedPatJetsTransientCorrectedDeepFlavour'):
-	process.updatedPatJetsTransientCorrectedDeepFlavour.addTagInfos = cms.bool(True) 
-	process.updatedPatJetsTransientCorrectedDeepFlavour.addBTagInfo = cms.bool(True)
+    from JMEAnalysis.JetToolbox.jetToolbox_cff import jetToolbox
+    jetToolbox(process, 'ak8', 'jetSequence', 'out', PUMethod='Puppi', JETCorrPayload='AK8PFPuppi', JETCorrLevels=JETCorrLevels, miniAOD=True, runOnMC=True,
+               Cut='pt > 170.0 && abs(rapidity()) < 2.4', addNsub=True, maxTau=3,
+               addSoftDrop=True, addSoftDropSubjets=True, subJETCorrPayload='AK4PFPuppi', subJETCorrLevels=JETCorrLevels,
+               bTagDiscriminators=bTagDiscriminators, bTagInfos=bTagInfos)
+    srcJets = cms.InputTag('selectedPatJetsAK8PFPuppi')
+    srcSubjets = cms.InputTag('selectedPatJetsAK8PFPuppiSoftDropPacked')
 else:
-	raise ValueError('I could not find updatedPatJetsTransientCorrectedDeepFlavour to embed the tagInfos, please check the cfg')
-# ---------------------------------------------------------
+    jetCorrectionsAK8 = ('AK8PFchs', ['L1FastJet', 'L2Relative', 'L3Absolute'], 'None')
 
-'''
-from RecoJets.JetProducers.ak4GenJets_cfi import ak8GenJets
-process.ak8GenJetsWithNu = ak4GenJets.clone(src='packedGenParticles')
- 
- ## Filter out neutrinos from packed GenParticles
-process.packedGenParticlesForJetsNoNu = cms.EDFilter("CandPtrSelector", src = cms.InputTag("packedGenParticles"), cut = cms.string("abs(pdgId) != 12 && abs(pdgId) != 14 && abs(pdgId) != 16"))
- ## Define GenJets
-process.ak8GenJetsRecluster = ak8GenJets.clone(src='packedGenParticlesForJetsNoNu')
+    from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
+    updateJetCollection(
+            process,
+            labelName="DeepFlavour",
+            jetSource=cms.InputTag('slimmedJetsAK8'),
+            jetCorrections=jetCorrectionsAK8,
+            pfCandidates=cms.InputTag('packedPFCandidates'),
+            pvSource=cms.InputTag("offlineSlimmedPrimaryVertices"),
+            svSource=cms.InputTag('slimmedSecondaryVertices'),
+            muSource=cms.InputTag('slimmedMuons'),
+            elSource=cms.InputTag('slimmedElectrons'),
+            btagInfos=bTagInfos,
+            btagDiscriminators=bTagDiscriminators,
+            explicitJTA=False
+    )
+    if hasattr(process, 'updatedPatJetsTransientCorrectedDeepFlavour'):
+        process.updatedPatJetsTransientCorrectedDeepFlavour.addTagInfos = cms.bool(True)
+        process.updatedPatJetsTransientCorrectedDeepFlavour.addBTagInfo = cms.bool(True)
+    else:
+        raise ValueError('I could not find updatedPatJetsTransientCorrectedDeepFlavour to embed the tagInfos, please check the cfg')
 
- 
-process.patGenJetMatchWithNu = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR           
-    src         = cms.InputTag("selectedUpdatedPatJetsDeepFlavour"),      # RECO jets (any View<Jet> is ok) 
-    matched     = cms.InputTag("ak8GenJetsWithNu"),        # GEN jets  (must be GenJetCollection)              
-    mcPdgId     = cms.vint32(),                      # n/a   
-    mcStatus    = cms.vint32(),                      # n/a   
-    checkCharge = cms.bool(False),                   # n/a   
-    maxDeltaR   = cms.double(0.8),                   # Minimum deltaR for the match   
-    #maxDPtRel   = cms.double(3.0),                  # Minimum deltaPt/Pt for the match (not used in GenJetMatcher)                     
-    resolveAmbiguities    = cms.bool(True),          # Forbid two RECO objects to match to the same GEN object 
-    resolveByMatchQuality = cms.bool(False),         # False = just match input in order; True = pick lowest deltaR pair first          
-)
-
-process.patGenJetMatchRecluster = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR           
-    src         = cms.InputTag("selectedUpdatedPatJetsDeepFlavour"),      # RECO jets (any View<Jet> is ok) 
-    matched     = cms.InputTag("ak8GenJetsRecluster"),        # GEN jets  (must be GenJetCollection)              
-    mcPdgId     = cms.vint32(),                      # n/a   
-    mcStatus    = cms.vint32(),                      # n/a   
-    checkCharge = cms.bool(False),                   # n/a   
-    maxDeltaR   = cms.double(0.8),                   # Minimum deltaR for the match   
-    #maxDPtRel   = cms.double(3.0),                  # Minimum deltaPt/Pt for the match (not used in GenJetMatcher)                     
-    resolveAmbiguities    = cms.bool(True),          # Forbid two RECO objects to match to the same GEN object 
-    resolveByMatchQuality = cms.bool(False),         # False = just match input in order; True = pick lowest deltaR pair first          
-)
-
-process.genJetSequence = cms.Sequence(process.packedGenParticlesForJetsNoNu*process.ak4GenJetsWithNu*process.ak4GenJetsRecluster*process.patGenJetMatchWithNu*process.patGenJetMatchRecluster)
-
-# ---------------------------------------------------------
-
-# Very Loose IVF SV collection
-from PhysicsTools.PatAlgos.tools.helpers import loadWithPrefix
-loadWithPrefix(process, 'RecoVertex.AdaptiveVertexFinder.inclusiveVertexing_cff', "looseIVF")
-process.looseIVFinclusiveCandidateVertexFinder.primaryVertices = cms.InputTag("offlineSlimmedPrimaryVertices")
-process.looseIVFinclusiveCandidateVertexFinder.tracks = cms.InputTag("packedPFCandidates")
-process.looseIVFinclusiveCandidateVertexFinder.vertexMinDLen2DSig = cms.double(0.)
-process.looseIVFinclusiveCandidateVertexFinder.vertexMinDLenSig = cms.double(0.)
-process.looseIVFinclusiveCandidateVertexFinder.fitterSigmacut = 20
-
-process.looseIVFcandidateVertexArbitrator.primaryVertices = cms.InputTag("offlineSlimmedPrimaryVertices")
-process.looseIVFcandidateVertexArbitrator.tracks = cms.InputTag("packedPFCandidates")
-process.looseIVFcandidateVertexArbitrator.secondaryVertices = cms.InputTag("looseIVFcandidateVertexMerger")
-process.looseIVFcandidateVertexArbitrator.fitterSigmacut = 20
-'''
+    srcJets = cms.InputTag('selectedUpdatedPatJetsDeepFlavour')
+    srcSubjets = cms.InputTag('')
 
 # ---------------------------------------------------------
 
 # DeepNtuplizer
 process.load("DeepNTuples.NtupleAK8.DeepNtuplizerAK8_cfi")
-process.deepntuplizer.jets = cms.InputTag('selectedUpdatedPatJetsDeepFlavour')
-process.deepntuplizer.bDiscriminators = bTagDiscriminators 
-process.deepntuplizer.bDiscriminators.append('pfCombinedMVAV2BJetTags')
+process.deepntuplizer.jets = srcJets
+process.deepntuplizer.subjets = srcSubjets
+process.deepntuplizer.usePuppi = cms.bool(usePuppi)
+process.deepntuplizer.bDiscriminators = bTagDiscriminators
 
 process.deepntuplizer.fjKeepFlavors = cms.untracked.vuint32(options.fjKeepFlavors)
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset

@@ -38,6 +38,7 @@ protected:
 private:
   FatJetMatching fjmatch_;
   std::vector<FatJetMatching::FatJetFlavor> keepFlavors_;
+  bool isPuppi_ = false;
   bool isQCDSample_ = false;
   bool isTrainSample_ = false;
 
@@ -45,6 +46,9 @@ private:
 
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;
+
+  edm::EDGetTokenT<pat::JetCollection> subjetToken_;
+  edm::Handle<pat::JetCollection> subjetsHandle;
 
 
 };

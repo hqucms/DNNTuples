@@ -11,16 +11,19 @@ namespace deepntuples {
 
 void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
   genParticlesToken_ = cc.consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
+  subjetToken_ = cc.consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("subjets"));
   fjTagInfoName = iConfig.getParameter<std::string>("fjTagInfoName");
   for (const auto &flv : iConfig.getUntrackedParameter<std::vector<unsigned>>("fjKeepFlavors", {})){
     keepFlavors_.push_back(static_cast<FatJetMatching::FatJetFlavor>(flv));
   }
+  isPuppi_ = iConfig.getParameter<bool>("usePuppi");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
 }
 
 void FatJetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   iEvent.getByToken(genParticlesToken_, genParticlesHandle);
+  iEvent.getByToken(subjetToken_, subjetsHandle);
 }
 
 void FatJetInfoFiller::book() {
@@ -56,6 +59,8 @@ void FatJetInfoFiller::book() {
 
   data.add<int>("sample_isQCD", 0);
 
+  data.add<int>("sample_usePuppiJets", isPuppi_);
+
 //  // legacy labels
 //  data.add<int>("fj_labelLegacy", 0);
 
@@ -89,6 +94,7 @@ void FatJetInfoFiller::book() {
   // puppi
   data.add<float>("fjPuppi_tau21", 0);
   data.add<float>("fjPuppi_tau32", 0);
+  data.add<float>("fjPuppi_sdmass", 0);
   data.add<float>("fjPuppi_corrsdmass", 0);
 
   // subjets: soft drop gives up to 2 subjets
@@ -231,9 +237,16 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fj_mass", jet.mass());
 
   // substructure
-  float tau1 = jet.userFloat("NjettinessAK8:tau1");
-  float tau2 = jet.userFloat("NjettinessAK8:tau2");
-  float tau3 = jet.userFloat("NjettinessAK8:tau3");
+  float tau1 = -1, tau2 = -1, tau3 = -1;
+  if (isPuppi_){
+    tau1 = jet.userFloat("NjettinessAK8Puppi:tau1");
+    tau2 = jet.userFloat("NjettinessAK8Puppi:tau2");
+    tau3 = jet.userFloat("NjettinessAK8Puppi:tau3");
+  }else{
+    tau1 = jet.userFloat("NjettinessAK8:tau1");
+    tau2 = jet.userFloat("NjettinessAK8:tau2");
+    tau3 = jet.userFloat("NjettinessAK8:tau3");
+  }
   data.fill<float>("fj_tau1", tau1);
   data.fill<float>("fj_tau2", tau2);
   data.fill<float>("fj_tau3", tau3);
@@ -241,18 +254,52 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fj_tau32", tau2 > 0 ? tau3/tau2 : 1.01);
 
   // soft drop
-  data.fill<float>("fj_sdmass", jet.userFloat("ak8PFJetsCHSSoftDropMass"));
+  if (isPuppi_){
+    data.fill<float>("fj_sdmass", jet.userFloat("ak8PFJetsPuppiSoftDropMass"));
+  }else{
+    data.fill<float>("fj_sdmass", jet.userFloat("ak8PFJetsCHSSoftDropMass"));
+  }
 
   // puppi
-  float puppi_tau1 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau1");
-  float puppi_tau2 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau2");
-  float puppi_tau3 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau3");
+  float puppi_tau1 = -1, puppi_tau2 = -1, puppi_tau3 = -1;
+  if (isPuppi_){
+    puppi_tau1 = jet.userFloat("NjettinessAK8Puppi:tau1");
+    puppi_tau2 = jet.userFloat("NjettinessAK8Puppi:tau2");
+    puppi_tau3 = jet.userFloat("NjettinessAK8Puppi:tau3");
+  }else{
+    puppi_tau1 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau1");
+    puppi_tau2 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau2");
+    puppi_tau3 = jet.userFloat("ak8PFJetsPuppiValueMap:NjettinessAK8PuppiTau3");
+  }
   data.fill<float>("fjPuppi_tau21", puppi_tau1 > 0 ? puppi_tau2/puppi_tau1 : 1.01);
   data.fill<float>("fjPuppi_tau32", puppi_tau2 > 0 ? puppi_tau3/puppi_tau2 : 1.01);
-  data.fill<float>("fjPuppi_corrsdmass", jet_helper.getCorrectedPuppiSoftDropMass());
 
   // subjets: soft drop gives up to 2 subjets
-  const auto& subjets = jet_helper.getSubJets();
+  pat::JetPtrCollection puppiSubjetsPtrCollection_;
+  std::vector<const pat::Jet*> subjets;
+  if (isPuppi_){
+    for (const pat::Jet &sj : *subjetsHandle) {
+      // sdCollectionSubjets_ stores the soft-drop AK8 jets, with the actual subjets stored as daughters
+      // PhysicsTools/PatAlgos/python/slimming/applySubstructure_cff.py
+      // PhysicsTools/PatUtils/plugins/JetSubstructurePacker.cc
+      if (reco::deltaR(sj, jet) < 0.8) {
+        for ( size_t ida = 0; ida < sj.numberOfDaughters(); ++ida ) {
+          auto candPtr =  sj.daughterPtr(ida);
+          puppiSubjetsPtrCollection_.push_back( edm::Ptr<pat::Jet>(candPtr) );
+          subjets.push_back(&(*puppiSubjetsPtrCollection_.back()));
+        }
+        break;
+      }
+    }
+  }else{
+    subjets = jet_helper.getSubJets();
+    puppiSubjetsPtrCollection_ = jet.subjets("SoftDropPuppi");
+  }
+
+  auto m_pair = jet_helper.getCorrectedPuppiSoftDropMass(puppiSubjetsPtrCollection_);
+  data.fill<float>("fjPuppi_sdmass", m_pair.first);
+  data.fill<float>("fjPuppi_corrsdmass", m_pair.second);
+
   data.fill<float>("fj_n_sdsubjets", subjets.size());
 
   if (subjets.size() > 0){
