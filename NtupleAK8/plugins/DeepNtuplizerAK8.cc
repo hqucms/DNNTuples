@@ -103,7 +103,7 @@ void DeepNtuplizerAK8::analyze(const edm::Event& iEvent, const edm::EventSetup& 
   for (unsigned idx=0; idx<jets->size(); ++idx){
     bool write_ = true;
 
-    const auto jet = jets->at(idx); // undo the JECs
+    const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
     JetHelper jet_helper(&jet);
 
     for (auto *m : modules_){
