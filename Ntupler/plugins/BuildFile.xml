@@ -3,5 +3,5 @@
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/ServiceRegistry"/>
 <use name="CommonTools/UtilAlgos"/>
-<use name="DeepNTuples/NtupleAK8"/>
+<use name="DeepNTuples/Ntupler"/>
 <flags EDM_PLUGIN="1"/>
