@@ -155,4 +155,3 @@ process.deepntuplizer.eleTightIds = cms.InputTag("egmGsfElectronIDs:cutBasedElec
 
 # process.p = cms.Path(process.QGTagger + process.genJetSequence * process.deepntuplizer)
 process.p = cms.Path(process.deepntuplizer)
-~
