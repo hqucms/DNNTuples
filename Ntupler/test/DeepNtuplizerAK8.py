@@ -128,7 +128,7 @@ else:
 # ---------------------------------------------------------
 
 # DeepNtuplizer
-process.load("DeepNTuples.NtupleAK8.DeepNtuplizerAK8_cfi")
+process.load("DeepNTuples.Ntupler.DeepNtuplizerAK8_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.subjets = srcSubjets
 process.deepntuplizer.usePuppi = cms.bool(usePuppi)

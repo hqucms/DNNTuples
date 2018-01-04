@@ -5,14 +5,14 @@
  *      Author: hqu
  */
 
-#include "DeepNTuples/NtupleAK8/interface/JetInfoFillerAK8.h"
+#include "DeepNTuples/Ntupler/interface/JetInfoFiller.h"
 
 #include <algorithm>
 
 
 namespace deepntuples {
 
-void JetInfoFillerAK8::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector && cc) {
+void JetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector && cc) {
   minPt_ = iConfig.getUntrackedParameter<double>("jetPtMin", 150);
   maxPt_ = iConfig.getUntrackedParameter<double>("jetPtMax", -1);
   maxAbsEta_ = iConfig.getUntrackedParameter<double>("jetAbsEtaMax", 2.4);
@@ -24,26 +24,17 @@ void JetInfoFillerAK8::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   genParticlesToken_ = cc.consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
 }
 
-void JetInfoFillerAK8::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void JetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   iEvent.getByToken(vtxToken_, vertices);
   iEvent.getByToken(puToken_, puInfo);
   iEvent.getByToken(rhoToken_, rhoInfo);
   event_ = iEvent.id().event();
-
-//  iEvent.getByToken(genJetMatchReclusterToken_, genJetMatchRecluster);
-//  iEvent.getByToken(genJetMatchWithNuToken_, genJetMatchWithNu);
-
   iEvent.getByToken(genParticlesToken_, genParticlesHandle);
   flavorDef.setGenParticles(*genParticlesHandle);
 
-//  iEvent.getByToken(muonsToken_, muonsHandle);
-//  iEvent.getByToken(electronsToken_, electronsHandle);
-
-
-
 }
 
-bool JetInfoFillerAK8::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
+bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
   // pv selection
   if (vertices->empty()) return false;
 
@@ -123,7 +114,7 @@ bool JetInfoFillerAK8::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   return true;
 }
 
-void JetInfoFillerAK8::book() {
+void JetInfoFiller::book() {
   // event information
   data.add<float>("npv", 0);
   data.add<float>("rho", 0);

@@ -5,8 +5,8 @@
  *      Author: hqu
  */
 
-#ifndef NTUPLEAK8_INTERFACE_FATJETINFOFILLER_H_
-#define NTUPLEAK8_INTERFACE_FATJETINFOFILLER_H_
+#ifndef NTUPLER_INTERFACE_FATJETINFOFILLER_H_
+#define NTUPLER_INTERFACE_FATJETINFOFILLER_H_
 
 #include "DataFormats/BTauReco/interface/ShallowTagInfo.h"
 #include "DataFormats/BTauReco/interface/BoostedDoubleSVTagInfo.h"
@@ -41,8 +41,10 @@ private:
   bool isPuppi_ = false;
   bool isQCDSample_ = false;
   bool isTrainSample_ = false;
+  double jetRadius_ = 0.8;
 
   std::string fjTagInfoName;
+  std::string fjRadiusSize;
 
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;
@@ -55,4 +57,4 @@ private:
 
 } /* namespace deepntuples */
 
-#endif /* NTUPLEAK8_INTERFACE_FATJETINFOFILLER_H_ */
+#endif /* NTUPLER_INTERFACE_FATJETINFOFILLER_H_ */

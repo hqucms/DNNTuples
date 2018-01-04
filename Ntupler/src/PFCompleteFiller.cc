@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 
-#include "DeepNTuples/NtupleAK8/interface/PFCompleteFiller.h"
+#include "DeepNTuples/Ntupler/interface/PFCompleteFiller.h"
 
 namespace deepntuples {
 

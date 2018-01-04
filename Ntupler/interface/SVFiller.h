@@ -5,8 +5,8 @@
  *      Author: hqu
  */
 
-#ifndef NTUPLEAK8_INTERFACE_SVFILLER_H_
-#define NTUPLEAK8_INTERFACE_SVFILLER_H_
+#ifndef NTUPLER_INTERFACE_SVFILLER_H_
+#define NTUPLER_INTERFACE_SVFILLER_H_
 
 #include "DataFormats/Candidate/interface/VertexCompositePtrCandidate.h"
 #include "DeepNTuples/NtupleCommons/interface/NtupleBase.h"
@@ -47,4 +47,4 @@ private:
 
 } /* namespace deepntuples */
 
-#endif /* NTUPLEAK8_INTERFACE_SVFILLER_H_ */
+#endif /* NTUPLER_INTERFACE_SVFILLER_H_ */

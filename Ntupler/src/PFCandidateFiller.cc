@@ -5,7 +5,7 @@
  *      Author: hqu
  */
 
-#include "DeepNTuples/NtupleAK8/interface/PFCandidateFiller.h"
+#include "DeepNTuples/Ntupler/interface/PFCandidateFiller.h"
 
 namespace deepntuples {
 
