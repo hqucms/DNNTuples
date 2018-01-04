@@ -20,7 +20,6 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   isPuppi_ = iConfig.getParameter<bool>("usePuppi");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
-  jetRadius_ = iConfig.getUntrackedParameter<double>("jetR",0.8);
   fjRadiusSize = std::to_string(int(10*jetRadius_));
 }
 

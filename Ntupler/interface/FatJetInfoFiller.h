@@ -20,7 +20,7 @@ namespace deepntuples {
 class FatJetInfoFiller: public NtupleBase {
 public:
   FatJetInfoFiller() : FatJetInfoFiller("") {}
-  FatJetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), fjmatch_(jetR, true) {}
+  FatJetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), fjmatch_(jetR, true) {jetRadius_=jetR;}
   virtual ~FatJetInfoFiller() {}
 
   // get input parameters from the cfg file
