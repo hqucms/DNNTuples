@@ -5,8 +5,8 @@
  *      Author: hqu
  */
 
-#ifndef NTUPLEAK8_INTERFACE_JETINFOFILLERAK8_H_
-#define NTUPLEAK8_INTERFACE_JETINFOFILLERAK8_H_
+#ifndef NTUPLER_INTERFACE_JETINFOFILLER_H_
+#define NTUPLER_INTERFACE_JETINFOFILLER_H_
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
@@ -16,11 +16,11 @@
 
 namespace deepntuples {
 
-class JetInfoFillerAK8: public NtupleBase {
+class JetInfoFiller: public NtupleBase {
 public:
-  JetInfoFillerAK8() : JetInfoFillerAK8("") {}
-  JetInfoFillerAK8(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), flavorDef(jetR) {}
-  virtual ~JetInfoFillerAK8() {}
+  JetInfoFiller() : JetInfoFiller("") {}
+  JetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), flavorDef(jetR) {}
+  virtual ~JetInfoFiller() {}
 
   // get input parameters from the cfg file
   virtual void readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector && cc) override;
@@ -71,4 +71,4 @@ private:
 
 } /* namespace deepntuples */
 
-#endif /* NTUPLEAK8_INTERFACE_JETINFOFILLERAK8_H_ */
+#endif /* NTUPLER_INTERFACE_JetInfoFiller_H_ */

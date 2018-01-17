@@ -1,5 +1,5 @@
 /*
- * DeepNtuplizerAK8AK8.cc
+ * DeepNtuplizerAK8.cc
  *
  *  Created on: May 24, 2017
  *      Author: hqu
@@ -16,20 +16,20 @@
 
 #include "DeepNTuples/NtupleCommons/interface/TreeWriter.h"
 
-#include "DeepNTuples/NtupleAK8/interface/JetInfoFillerAK8.h"
-#include "DeepNTuples/NtupleAK8/interface/FatJetInfoFiller.h"
-#include "DeepNTuples/NtupleAK8/interface/PFCandidateFiller.h"
-#include "DeepNTuples/NtupleAK8/interface/TrackFiller.h"
-#include "DeepNTuples/NtupleAK8/interface/SVFiller.h"
-#include "DeepNTuples/NtupleAK8/interface/PFCompleteFiller.h"
+#include "DeepNTuples/Ntupler/interface/JetInfoFiller.h"
+#include "DeepNTuples/Ntupler/interface/FatJetInfoFiller.h"
+#include "DeepNTuples/Ntupler/interface/PFCandidateFiller.h"
+#include "DeepNTuples/Ntupler/interface/TrackFiller.h"
+#include "DeepNTuples/Ntupler/interface/SVFiller.h"
+#include "DeepNTuples/Ntupler/interface/PFCompleteFiller.h"
 
 
 using namespace deepntuples;
 
-class DeepNtuplizerAK8 : public edm::one::EDAnalyzer<edm::one::SharedResources> {
+class DeepNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
-  explicit DeepNtuplizerAK8(const edm::ParameterSet&);
-  ~DeepNtuplizerAK8();
+  explicit DeepNtuplizer(const edm::ParameterSet&);
+  ~DeepNtuplizer();
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -51,7 +51,7 @@ private:
   std::vector<NtupleBase*> modules_;
 };
 
-DeepNtuplizerAK8::DeepNtuplizerAK8(const edm::ParameterSet& iConfig):
+DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets")))
 {
 
@@ -59,7 +59,7 @@ DeepNtuplizerAK8::DeepNtuplizerAK8(const edm::ParameterSet& iConfig):
   const double jetR = iConfig.getParameter<double>("jetR");
 
   // register modules
-  JetInfoFillerAK8 *jetinfo = new JetInfoFillerAK8("", jetR);
+  JetInfoFiller *jetinfo = new JetInfoFiller("", jetR);
   addModule(jetinfo);
 
   FatJetInfoFiller *fjinfo = new FatJetInfoFiller("", jetR);
@@ -83,7 +83,7 @@ DeepNtuplizerAK8::DeepNtuplizerAK8(const edm::ParameterSet& iConfig):
 
 }
 
-DeepNtuplizerAK8::~DeepNtuplizerAK8()
+DeepNtuplizer::~DeepNtuplizer()
 {
   for(auto *m : modules_)
     delete m;
@@ -91,7 +91,7 @@ DeepNtuplizerAK8::~DeepNtuplizerAK8()
 
 
 // ------------ method called for each event  ------------
-void DeepNtuplizerAK8::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
   for(auto *m : modules_){
     m->readEvent(iEvent, iSetup);
@@ -122,7 +122,7 @@ void DeepNtuplizerAK8::analyze(const edm::Event& iEvent, const edm::EventSetup& 
 
 
 // ------------ method called once each job just before starting event loop  ------------
-void DeepNtuplizerAK8::beginJob() {
+void DeepNtuplizer::beginJob() {
   if( !fs ){
     throw edm::Exception( edm::errors::Configuration,
         "TFile Service is not registered in cfg file" );
@@ -135,11 +135,11 @@ void DeepNtuplizerAK8::beginJob() {
 }
 
 // ------------ method called once each job just after ending the event loop  ------------
-void DeepNtuplizerAK8::endJob() {
+void DeepNtuplizer::endJob() {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
-void DeepNtuplizerAK8::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+void DeepNtuplizer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -148,4 +148,4 @@ void DeepNtuplizerAK8::fillDescriptions(edm::ConfigurationDescriptions& descript
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(DeepNtuplizerAK8);
+DEFINE_FWK_MODULE(DeepNtuplizer);

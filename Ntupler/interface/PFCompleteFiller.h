@@ -5,8 +5,8 @@
  *      Author: hqu
  */
 
-#ifndef NTUPLEAK8_INTERFACE_PFCOMPLETEFILLER_H_
-#define NTUPLEAK8_INTERFACE_PFCOMPLETEFILLER_H_
+#ifndef NTUPLER_INTERFACE_PFCOMPLETEFILLER_H_
+#define NTUPLER_INTERFACE_PFCOMPLETEFILLER_H_
 
 #include "DeepNTuples/BTagHelpers/interface/TrackInfoBuilder.h"
 #include "DataFormats/Candidate/interface/VertexCompositePtrCandidate.h"
@@ -64,4 +64,4 @@ private:
 
 } /* namespace deepntuples */
 
-#endif /* NTUPLEAK8_INTERFACE_PFCOMPLETEFILLER_H_ */
+#endif /* NTUPLER_INTERFACE_PFCOMPLETEFILLER_H_ */
