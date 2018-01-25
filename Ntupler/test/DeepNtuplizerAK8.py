@@ -77,7 +77,7 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '80X_mcRun2_asymptotic_2016_Tra
 print 'Using global tag', process.GlobalTag.globaltag
 
 # ---------------------------------------------------------
-usePuppi = False
+usePuppi = True
 
 bTagInfos = [
     'pfBoostedDoubleSVAK8TagInfos'
@@ -128,7 +128,7 @@ else:
 # ---------------------------------------------------------
 
 # DeepNtuplizer
-process.load("DeepNTuples.Ntupler.DeepNtuplizerAK8_cfi")
+process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.subjets = srcSubjets
 process.deepntuplizer.usePuppi = cms.bool(usePuppi)

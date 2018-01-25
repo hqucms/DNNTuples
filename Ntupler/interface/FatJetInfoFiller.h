@@ -20,7 +20,7 @@ namespace deepntuples {
 class FatJetInfoFiller: public NtupleBase {
 public:
   FatJetInfoFiller() : FatJetInfoFiller("") {}
-  FatJetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), fjmatch_(jetR, true) {jetRadius_=jetR;}
+  FatJetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), fjmatch_(jetR, true) {}
   virtual ~FatJetInfoFiller() {}
 
   // get input parameters from the cfg file
@@ -41,17 +41,12 @@ private:
   bool isPuppi_ = false;
   bool isQCDSample_ = false;
   bool isTrainSample_ = false;
-  double jetRadius_ = 0.8;
 
   std::string fjTagInfoName;
   std::string fjRadiusSize;
 
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;
-
-  edm::EDGetTokenT<pat::JetCollection> subjetToken_;
-  edm::Handle<pat::JetCollection> subjetsHandle;
-
 
 };
 

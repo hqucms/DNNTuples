@@ -7,7 +7,7 @@ options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
 options.inputFiles = '/store/mc/RunIISummer16MiniAODv2/GluGluHToCC_M125_13TeV_powheg_pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/50000/00DE64C2-3EE6-E711-BCB8-0242AC130002.root'
-options.maxEvents = 1000
+options.maxEvents = -1
 
 options.register('inputScript', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "input Script")
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
@@ -93,7 +93,7 @@ JETCorrLevels = ['L2Relative', 'L3Absolute']
 
 from JMEAnalysis.JetToolbox.jetToolbox_cff import jetToolbox
 jetToolbox(process, 'ak15', 'jetSequence', 'out', PUMethod='Puppi', JETCorrPayload='AK8PFPuppi', JETCorrLevels=JETCorrLevels, miniAOD=True, runOnMC=True,
-           Cut='pt > 170.0 && abs(rapidity()) < 2.4', addNsub=True, maxTau=3,
+           Cut='pt > 120.0 && abs(rapidity()) < 2.4', addNsub=True, maxTau=3,
            addSoftDrop=True, addSoftDropSubjets=True, subJETCorrPayload='AK4PFPuppi', subJETCorrLevels=JETCorrLevels,
            bTagDiscriminators=bTagDiscriminators, bTagInfos=bTagInfos)
 srcJets = cms.InputTag('selectedPatJetsAK15PFPuppi')
@@ -101,11 +101,13 @@ srcSubjets = cms.InputTag('selectedPatJetsAK15PFPuppiSoftDropPacked')
 # ---------------------------------------------------------
 
 # DeepNtuplizer
-process.load("DeepNTuples.Ntupler.DeepNtuplizerAK15_cfi")
+process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.subjets = srcSubjets
 process.deepntuplizer.usePuppi = cms.bool(usePuppi)
 process.deepntuplizer.bDiscriminators = bTagDiscriminators
+process.deepntuplizer.jetR = 1.5
+process.deepntuplizer.jetPtMin = 150
 
 process.deepntuplizer.fjKeepFlavors = cms.untracked.vuint32(options.fjKeepFlavors)
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset

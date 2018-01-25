@@ -108,9 +108,25 @@ void JetHelper::initializeConstituents() {
   }
 }
 
+void JetHelper::setSubjets(const std::vector<pat::Jet>& sdjets, double R) {
+  subjets_.clear();
+  for (const pat::Jet &sj : sdjets) {
+    // sdjets stores the soft-drop AK8 jets, with the actual subjets stored as daughters
+    // PhysicsTools/PatAlgos/python/slimming/applySubstructure_cff.py
+    // PhysicsTools/PatUtils/plugins/JetSubstructurePacker.cc
+    if (reco::deltaR(sj, *jet_) < R) {
+      for ( size_t ida = 0; ida < sj.numberOfDaughters(); ++ida ) {
+        auto candPtr =  sj.daughterPtr(ida);
+        subjets_.push_back(&(*edm::Ptr<pat::Jet>(candPtr)));
+      }
+      break;
+    }
+  }
+}
+
 } /* namespace deepntuples */
 
-std::pair<double, double> deepntuples::JetHelper::getCorrectedPuppiSoftDropMass(const pat::JetPtrCollection &puppisubjets) const {
+std::pair<double, double> deepntuples::JetHelper::getCorrectedPuppiSoftDropMass(const std::vector<const pat::Jet*> &puppisubjets) const {
   try{
     double sdpuppimass = 0;
     if (puppisubjets.size()==1){
@@ -132,3 +148,4 @@ std::pair<double, double> deepntuples::JetHelper::getCorrectedPuppiSoftDropMass(
     return std::make_pair(-1, -1);
   }
 }
+

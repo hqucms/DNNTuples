@@ -1,5 +1,5 @@
 /*
- * DeepNtuplizerAK8.cc
+ * DeepNtuplizer.cc
  *
  *  Created on: May 24, 2017
  *      Author: hqu
@@ -39,7 +39,11 @@ private:
   virtual void analyze(const edm::Event&, const edm::EventSetup&) override;
   virtual void endJob() override;
 
+  double jetR = -1;
+  bool isPuppi = false;
+
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
+  edm::EDGetTokenT<pat::JetCollection>  sdjetToken_;
 
   edm::Service<TFileService> fs;
   TreeWriter *treeWriter = nullptr;
@@ -52,11 +56,11 @@ private:
 };
 
 DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
-    jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets")))
+    jetR(iConfig.getParameter<double>("jetR")),
+    isPuppi(iConfig.getParameter<bool>("usePuppi")),
+    jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
+    sdjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("subjets")))
 {
-
-  // read configuration parameters
-  const double jetR = iConfig.getParameter<double>("jetR");
 
   // register modules
   JetInfoFiller *jetinfo = new JetInfoFiller("", jetR);
@@ -65,8 +69,8 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
   FatJetInfoFiller *fjinfo = new FatJetInfoFiller("", jetR);
   addModule(fjinfo);
 
-  PFCandidateFiller *pfcands = new PFCandidateFiller("", jetR);
-  addModule(pfcands);
+//  PFCandidateFiller *pfcands = new PFCandidateFiller("", jetR);
+//  addModule(pfcands);
 
   TrackFiller *tracks = new TrackFiller("", jetR);
   addModule(tracks);
@@ -100,11 +104,17 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   edm::Handle<edm::View<pat::Jet>> jets;
   iEvent.getByToken(jetToken_, jets);
 
+  edm::Handle<pat::JetCollection> sdjetsHandle;
+  iEvent.getByToken(sdjetToken_, sdjetsHandle);
+
   for (unsigned idx=0; idx<jets->size(); ++idx){
     bool write_ = true;
 
     const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
     JetHelper jet_helper(&jet);
+    if (isPuppi){
+      jet_helper.setSubjets(*sdjetsHandle, jetR);
+    }
 
     for (auto *m : modules_){
       if (!m->fillBranches(jet.correctedJet("Uncorrected"), idx, jet_helper)){

@@ -20,6 +20,11 @@ public:
 
   virtual ~JetHelper() {}
 
+  // set subjets
+  void setSubjets(const std::vector<pat::Jet>& sdjets, double R);
+
+  // ------
+
   // return jet constituents (PF candidates)
   const std::vector<const pat::PackedCandidate*>& getJetConstituents() const { return daughters_; }
   unsigned int numberOfDaughters() const { return daughters_.size(); }
@@ -28,7 +33,7 @@ public:
 
   const std::vector<const pat::Jet*>& getSubJets() const { return subjets_; }
 
-  std::pair<double, double> getCorrectedPuppiSoftDropMass(const pat::JetPtrCollection &puppisubjets) const; // tmp
+  std::pair<double, double> getCorrectedPuppiSoftDropMass(const std::vector<const pat::Jet*> &puppisubjets) const; // tmp
 
   // quark/gluon discrimination variables
   double ptD()   const { return ptD_;          }

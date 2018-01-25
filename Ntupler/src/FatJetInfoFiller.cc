@@ -6,13 +6,12 @@
  */
 
 #include "DeepNTuples/Ntupler/interface/FatJetInfoFiller.h"
-#include <string>     // std::string, std::to_string
+#include <string>
 
 namespace deepntuples {
 
 void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
   genParticlesToken_ = cc.consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
-  subjetToken_ = cc.consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("subjets"));
   fjTagInfoName = iConfig.getParameter<std::string>("fjTagInfoName");
   for (const auto &flv : iConfig.getUntrackedParameter<std::vector<unsigned>>("fjKeepFlavors", {})){
     keepFlavors_.push_back(static_cast<FatJetMatching::FatJetFlavor>(flv));
@@ -20,12 +19,11 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   isPuppi_ = iConfig.getParameter<bool>("usePuppi");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
-  fjRadiusSize = std::to_string(int(10*jetRadius_));
+  fjRadiusSize = std::to_string(int(10*jetR_));
 }
 
 void FatJetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   iEvent.getByToken(genParticlesToken_, genParticlesHandle);
-  iEvent.getByToken(subjetToken_, subjetsHandle);
 }
 
 void FatJetInfoFiller::book() {
@@ -186,7 +184,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   // ----------------------------------------------------------------
 //  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, 0.6);
-  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, jetRadius_);
+  auto fjlabel = fjmatch_.flavorLabel(&jet, *genParticlesHandle, jetR_);
 
   data.fill<int>("fj_label", fjlabel.first);
 
@@ -277,28 +275,17 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fjPuppi_tau32", puppi_tau2 > 0 ? puppi_tau3/puppi_tau2 : 1.01);
 
   // subjets: soft drop gives up to 2 subjets
-  pat::JetPtrCollection puppiSubjetsPtrCollection_;
-  std::vector<const pat::Jet*> subjets;
+  const auto& subjets = jet_helper.getSubJets();
+  std::vector<const pat::Jet*> puppiSubjets;
   if (isPuppi_){
-    for (const pat::Jet &sj : *subjetsHandle) {
-      // sdCollectionSubjets_ stores the soft-drop AK8 jets, with the actual subjets stored as daughters
-      // PhysicsTools/PatAlgos/python/slimming/applySubstructure_cff.py
-      // PhysicsTools/PatUtils/plugins/JetSubstructurePacker.cc
-      if (reco::deltaR(sj, jet) < jetRadius_) {
-        for ( size_t ida = 0; ida < sj.numberOfDaughters(); ++ida ) {
-          auto candPtr =  sj.daughterPtr(ida);
-          puppiSubjetsPtrCollection_.push_back( edm::Ptr<pat::Jet>(candPtr) );
-          subjets.push_back(&(*puppiSubjetsPtrCollection_.back()));
-        }
-        break;
-      }
-    }
+    puppiSubjets = subjets;
   }else{
-    subjets = jet_helper.getSubJets();
-    puppiSubjetsPtrCollection_ = jet.subjets("SoftDropPuppi");
+    for (const auto & sj : jet.subjets("SoftDropPuppi")){
+      puppiSubjets.push_back(&(*sj));
+    }
   }
 
-  auto m_pair = jet_helper.getCorrectedPuppiSoftDropMass(puppiSubjetsPtrCollection_);
+  auto m_pair = jet_helper.getCorrectedPuppiSoftDropMass(puppiSubjets);
   data.fill<float>("fjPuppi_sdmass", m_pair.first);
   data.fill<float>("fjPuppi_corrsdmass", m_pair.second);
 

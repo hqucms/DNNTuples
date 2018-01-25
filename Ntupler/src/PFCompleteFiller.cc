@@ -51,6 +51,10 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("part_pt");
   data.addMulti<float>("part_mass");
 
+  data.addMulti<float>("part_ptrel_log");
+  data.addMulti<float>("part_erel_log");
+  data.addMulti<float>("part_pt_log");
+
   data.addMulti<float>("part_drminsv");
   data.addMulti<float>("part_drsubjet1");
   data.addMulti<float>("part_drsubjet2");
@@ -179,6 +183,10 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     data.fillMulti<float>("part_puppiw", cand->puppiWeight());
     data.fillMulti<float>("part_pt", cand->pt());
     data.fillMulti<float>("part_mass", cand->mass());
+
+    data.fillMulti<float>("part_ptrel_log", catchInfs(std::log(cand->pt()/jet.pt()), -99));
+    data.fillMulti<float>("part_erel_log", catchInfs(std::log(cand->energy()/jet.energy()), -99));
+    data.fillMulti<float>("part_pt_log", catchInfs(std::log(cand->pt()), -99));
 
     double minDR = 999;
     for (const auto &sv : *SVs){
