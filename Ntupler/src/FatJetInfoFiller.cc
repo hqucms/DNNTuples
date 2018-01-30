@@ -333,7 +333,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   assert(bdsvTagInfo);
   const auto &vars = bdsvTagInfo->taggingVariables();
 
-  data.fill<float>("fj_doubleb", jet.bDiscriminator("pfBoostedDoubleSecondaryVertexAK" + fjRadiusSize +"BJetTags"));
+  data.fill<float>("fj_doubleb", jet.bDiscriminator("pfBoostedDoubleSecondaryVertexAK8BJetTags"));
 
   //flavor info
   data.fill<int>("fj_isBB", jet.jetFlavourInfo().getbHadrons().size() >= 2);
