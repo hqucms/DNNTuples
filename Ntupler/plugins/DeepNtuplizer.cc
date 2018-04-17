@@ -44,6 +44,8 @@ private:
 
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
   edm::EDGetTokenT<pat::JetCollection>  sdjetToken_;
+  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuMatchToken_;
+  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchToken_;
 
   edm::Service<TFileService> fs;
   TreeWriter *treeWriter = nullptr;
@@ -59,7 +61,9 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     jetR(iConfig.getParameter<double>("jetR")),
     isPuppi(iConfig.getParameter<bool>("usePuppi")),
     jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
-    sdjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("subjets")))
+    sdjetToken_(consumes<pat::JetCollection>(iConfig.getParameter<edm::InputTag>("subjets"))),
+    genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch"))),
+    genJetWithNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsSoftDropMatch")))
 {
 
   // register modules
@@ -72,8 +76,8 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
 //  PFCandidateFiller *pfcands = new PFCandidateFiller("", jetR);
 //  addModule(pfcands);
 
-  TrackFiller *tracks = new TrackFiller("", jetR);
-  addModule(tracks);
+//  TrackFiller *tracks = new TrackFiller("", jetR);
+//  addModule(tracks);
 
   SVFiller *sv = new SVFiller("", jetR);
   addModule(sv);
@@ -107,11 +111,19 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   edm::Handle<pat::JetCollection> sdjetsHandle;
   iEvent.getByToken(sdjetToken_, sdjetsHandle);
 
+  edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuMatchHandle;
+  iEvent.getByToken(genJetWithNuMatchToken_, genJetWithNuMatchHandle);
+
+  edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchHandle;
+  iEvent.getByToken(genJetWithNuSoftDropMatchToken_, genJetWithNuSoftDropMatchHandle);
+
   for (unsigned idx=0; idx<jets->size(); ++idx){
     bool write_ = true;
 
     const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
     JetHelper jet_helper(&jet);
+    jet_helper.setGenjetWithNu((*genJetWithNuMatchHandle)[jets->refAt(idx)]);
+    jet_helper.setGenjetWithNuSoftDrop((*genJetWithNuSoftDropMatchHandle)[jets->refAt(idx)]);
     if (isPuppi){
       jet_helper.setSubjets(*sdjetsHandle, jetR);
     }

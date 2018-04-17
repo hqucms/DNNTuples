@@ -33,7 +33,12 @@ void SVFiller::book() {
   data.addMulti<float>("sv_etarel");
   data.addMulti<float>("sv_deltaR");
   data.addMulti<float>("sv_pt");
+  data.addMulti<float>("sv_abseta");
   data.addMulti<float>("sv_mass");
+
+  data.addMulti<float>("sv_ptrel_log");
+  data.addMulti<float>("sv_erel_log");
+  data.addMulti<float>("sv_pt_log");
 
   // sv properties
   data.addMulti<float>("sv_ntracks");
@@ -79,7 +84,12 @@ bool SVFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_hel
     data.fillMulti<float>("sv_etarel", etasign * (sv->eta() - jet.eta()));
     data.fillMulti<float>("sv_deltaR", reco::deltaR(*sv, jet));
     data.fillMulti<float>("sv_pt", sv->pt());
+    data.fillMulti<float>("sv_abseta", std::abs(sv->eta()));
     data.fillMulti<float>("sv_mass", sv->mass());
+
+    data.fillMulti<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
+    data.fillMulti<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
+    data.fillMulti<float>("sv_pt_log", catchInfs(std::log(sv->pt()), -99));
 
     // sv properties
     data.fillMulti<float>("sv_ntracks", sv->numberOfDaughters());

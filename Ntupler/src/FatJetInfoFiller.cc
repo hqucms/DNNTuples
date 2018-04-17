@@ -13,9 +13,6 @@ namespace deepntuples {
 void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
   genParticlesToken_ = cc.consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
   fjTagInfoName = iConfig.getParameter<std::string>("fjTagInfoName");
-  for (const auto &flv : iConfig.getUntrackedParameter<std::vector<unsigned>>("fjKeepFlavors", {})){
-    keepFlavors_.push_back(static_cast<FatJetMatching::FatJetFlavor>(flv));
-  }
   isPuppi_ = iConfig.getParameter<bool>("usePuppi");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
@@ -50,6 +47,7 @@ void FatJetInfoFiller::book() {
   data.add<int>("label_H_bb",    0);
   data.add<int>("label_H_cc",    0);
   data.add<int>("label_H_qqqq",  0);
+  data.add<int>("label_H_tautau",0);
 
   data.add<int>("label_QCD_bb",  0);
   data.add<int>("label_QCD_cc",  0);
@@ -74,6 +72,19 @@ void FatJetInfoFiller::book() {
   // gen-matched particle (top/W/etc.)
   data.add<float>("fj_gen_pt", 0);
   data.add<float>("fj_gen_eta", 0);
+
+  // --- jet energy/mass regression ---
+  data.add<float>("fj_genjet_pt", 0);
+  data.add<float>("fj_genOverReco_pt", 1); // default to 1 if not gen-matched
+  data.add<float>("fj_genOverReco_pt_null", 0); // default to 0 if not gen-matched
+  data.add<float>("fj_genjet_mass", 0);
+  data.add<float>("fj_genOverReco_mass", 1); // default to 1 if not gen-matched
+  data.add<float>("fj_genOverReco_mass_null", 0); // default to 0 if not gen-matched
+  data.add<float>("fj_genjet_sdmass", 0);
+  data.add<float>("fj_genjet_sdmass_sqrt", 0);
+  data.add<float>("fj_genOverReco_sdmass", 1); // default to 1 if not gen-matched
+  data.add<float>("fj_genOverReco_sdmass_null", 0); // default to 0 if not gen-matched
+  // ----------------------------------
 
   // fatjet kinematics
   data.add<float>("fj_pt", 0);
@@ -164,13 +175,9 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_jetNTracks", 0);
   data.add<float>("fj_nSV", 0);
 
-
 }
 
 bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
-
-//  // legacy label
-//  data.fill<int>("fj_labelLegacy", fjmatch_.flavor(&jet, *genParticlesHandle).first);
 
   // JMAR label
   {
@@ -213,6 +220,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("label_H_bb",    fjlabel.first == FatJetMatching::H_bb);
   data.fill<int>("label_H_cc",    fjlabel.first == FatJetMatching::H_cc);
   data.fill<int>("label_H_qqqq",  fjlabel.first == FatJetMatching::H_qqqq);
+  data.fill<int>("label_H_tautau",fjlabel.first == FatJetMatching::H_tautau);
 
   data.fill<int>("label_QCD_bb",  fjlabel.first == FatJetMatching::QCD_bb);
   data.fill<int>("label_QCD_cc",  fjlabel.first == FatJetMatching::QCD_cc);
@@ -226,9 +234,8 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
   data.fill<float>("fj_gen_eta", fjlabel.second ? fjlabel.second->eta() : -999);
-  // ----------------------------------------------------------------
 
-
+  // ----------------------------------
 
   // fatjet kinematics
   data.fill<float>("fj_pt", jet.pt());
@@ -285,9 +292,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     }
   }
 
-  auto m_pair = jet_helper.getCorrectedPuppiSoftDropMass(puppiSubjets);
-  data.fill<float>("fjPuppi_sdmass", m_pair.first);
-  data.fill<float>("fjPuppi_corrsdmass", m_pair.second);
+  auto msd_pair = jet_helper.getCorrectedPuppiSoftDropMass(puppiSubjets);
+  data.fill<float>("fjPuppi_sdmass", msd_pair.first);
+  data.fill<float>("fjPuppi_corrsdmass", msd_pair.second);
 
   data.fill<float>("fj_n_sdsubjets", subjets.size());
 
@@ -325,6 +332,30 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
       data.fill<float>("fj_sdn2", var_sd_0/std::pow(deltaR,-2));
     }
   }
+
+  // ----------------------------------------------------------------
+
+  // --- jet energy/mass regression ---
+  const auto *genjet = jet_helper.genjetWithNu();
+  if (genjet){
+    // jet here points to the uncorrected jet
+    data.fill<float>("fj_genjet_pt", genjet->pt());
+    data.fill<float>("fj_genOverReco_pt", catchInfs(genjet->pt() / jet.pt(), 1));
+    data.fill<float>("fj_genOverReco_pt_null", catchInfs(genjet->pt() / jet.pt(), 0));
+    data.fill<float>("fj_genjet_mass", genjet->mass());
+    data.fill<float>("fj_genOverReco_mass", catchInfs(genjet->mass() / jet.mass(), 1));
+    data.fill<float>("fj_genOverReco_mass_null", catchInfs(genjet->mass() / jet.mass(), 0));
+  }
+  const auto *sdgenjet = jet_helper.genjetWithNuSoftDrop();
+  if (sdgenjet){
+    // jet here points to the uncorrected jet
+    auto pos = [](double x){ return x<0 ? 0 : x; };
+    data.fill<float>("fj_genjet_sdmass", pos(sdgenjet->mass()));
+    data.fill<float>("fj_genjet_sdmass_sqrt", std::sqrt(pos(sdgenjet->mass())));
+    data.fill<float>("fj_genOverReco_sdmass", catchInfs(pos(sdgenjet->mass()) / pos(msd_pair.first), 1));
+    data.fill<float>("fj_genOverReco_sdmass_null", catchInfs(pos(sdgenjet->mass()) / pos(msd_pair.first), 0));
+  }
+
 
   // --------
   // double-b

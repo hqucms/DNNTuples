@@ -23,6 +23,9 @@ public:
   // set subjets
   void setSubjets(const std::vector<pat::Jet>& sdjets, double R);
 
+  // set genjet (clustered w/ neutrino)
+  void setGenjetWithNu(const reco::GenJetRef &genjetRef) { genjetWithNu_ = (genjetRef.isNull() ? nullptr : &(*genjetRef)); }
+  void setGenjetWithNuSoftDrop(const reco::GenJetRef &genjetRef) { genjetWithNuSoftDrop_ = (genjetRef.isNull() ? nullptr : &(*genjetRef)); }
   // ------
 
   // return jet constituents (PF candidates)
@@ -32,6 +35,9 @@ public:
   const std::vector<const pat::PackedCandidate*>& getGroomedJetConstituents() const { return daughtersGroomed_; }
 
   const std::vector<const pat::Jet*>& getSubJets() const { return subjets_; }
+
+  const reco::GenJet* genjetWithNu() const { return genjetWithNu_; }
+  const reco::GenJet* genjetWithNuSoftDrop() const { return genjetWithNuSoftDrop_; }
 
   std::pair<double, double> getCorrectedPuppiSoftDropMass(const std::vector<const pat::Jet*> &puppisubjets) const; // tmp
 
@@ -50,6 +56,8 @@ private:
 private:
   // data members
   const pat::Jet *jet_ = nullptr;
+  const reco::GenJet *genjetWithNu_ = nullptr;
+  const reco::GenJet *genjetWithNuSoftDrop_ = nullptr;
   std::vector<const pat::Jet*> subjets_;
   std::vector<const pat::PackedCandidate*> daughters_;
   std::vector<const pat::PackedCandidate*> daughtersGroomed_;

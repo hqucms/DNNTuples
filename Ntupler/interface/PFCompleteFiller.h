@@ -60,6 +60,8 @@ private:
   edm::Handle<edm::ValueMap<bool> >                medium_id_decisions;
   edm::Handle<edm::ValueMap<bool> >                tight_id_decisions;
 
+  bool fillElectronVars_ = false;
+  bool fillMuonVars_ = false;
 };
 
 } /* namespace deepntuples */

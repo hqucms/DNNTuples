@@ -9,17 +9,15 @@ options.outputFile = 'output.root'
 options.inputFiles = '/store/mc/RunIISummer16MiniAODv2/TTJets_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/MINIAODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/110000/48E7598C-A7E6-E611-8092-002590DE6E76.root'
 options.maxEvents = -1
 
-options.register('inputScript', '', VarParsing.multiplicity.singleton, VarParsing.varType.string, "input Script")
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
 options.register('job', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "job number")
 options.register('nJobs', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int, "total jobs")
-options.register('fjKeepFlavors', [], VarParsing.multiplicity.list, VarParsing.varType.int, "Types of fatjet to keep in this sample")
-# options.register('gluonReduction', 0.0, VarParsing.multiplicity.singleton, VarParsing.varType.float, "gluon reduction")
 options.register('inputDataset',
                  '',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.string,
                  "Input dataset")
+options.register('isTrainSample', True, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "if the sample is used for training")
 
 options.setupTags(tag='%d', ifCond='nJobs > 1', tagArg='job')
 options.parseArguments()
@@ -30,12 +28,10 @@ process = cms.Process("DNNFiller")
 
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
-if not options.inputScript:  # this is probably for testing
-	process.MessageLogger.cerr.FwkReport.reportEvery = 100
 
 process.options = cms.untracked.PSet(
-   allowUnscheduled = cms.untracked.bool(True),  
-   wantSummary=cms.untracked.bool(False)
+    allowUnscheduled = cms.untracked.bool(True),
+    wantSummary=cms.untracked.bool(False)
 )
 
 print ('Using output file ' + options.outputFile)
@@ -50,8 +46,6 @@ process.source = cms.Source('PoolSource',
     skipEvents=cms.untracked.uint32(options.skipEvents)
 )
 
-if options.inputScript:
-    process.load(options.inputScript)
 
 numberOfFiles = len(process.source.fileNames)
 numberOfJobs = options.nJobs
@@ -78,6 +72,7 @@ print 'Using global tag', process.GlobalTag.globaltag
 
 # ---------------------------------------------------------
 usePuppi = True
+jetR = 0.8
 
 bTagInfos = [
     'pfBoostedDoubleSVAK8TagInfos'
@@ -126,6 +121,45 @@ else:
     srcSubjets = cms.InputTag('')
 
 # ---------------------------------------------------------
+# genJets
+from RecoJets.JetProducers.ak4GenJets_cfi import ak4GenJets
+process.ak8GenJetsWithNu = ak4GenJets.clone(
+    src='packedGenParticles',
+    rParam=cms.double(jetR),
+    jetPtMin=150.0
+)
+process.ak8GenJetWithNuMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR
+    src=srcJets,  # RECO jets (any View<Jet> is ok)
+    matched=cms.InputTag("ak8GenJetsWithNu"),  # GEN jets  (must be GenJetCollection)
+    mcPdgId=cms.vint32(),  # n/a
+    mcStatus=cms.vint32(),  # n/a
+    checkCharge=cms.bool(False),  # n/a
+    maxDeltaR=cms.double(jetR),  # Minimum deltaR for the match
+    # maxDPtRel   = cms.double(3.0),                  # Minimum deltaPt/Pt for the match (not used in GenJetMatcher)
+    resolveAmbiguities=cms.bool(True),  # Forbid two RECO objects to match to the same GEN object
+    resolveByMatchQuality=cms.bool(False),  # False = just match input in order; True = pick lowest deltaR pair first
+)
+# softdrop
+process.ak8GenJetsWithNuSoftDrop = process.ak8GenJetsWithNu.clone(
+    useSoftDrop=cms.bool(True),
+    zcut=cms.double(0.1),
+    beta=cms.double(0.0),
+    R0=cms.double(jetR),
+    useExplicitGhosts=cms.bool(True),
+)
+process.ak8GenJetWithNuSoftDropMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR
+    src=srcJets,  # RECO jets (any View<Jet> is ok)
+    matched=cms.InputTag("ak8GenJetsWithNuSoftDrop"),  # GEN jets  (must be GenJetCollection)
+    mcPdgId=cms.vint32(),  # n/a
+    mcStatus=cms.vint32(),  # n/a
+    checkCharge=cms.bool(False),  # n/a
+    maxDeltaR=cms.double(jetR),  # Minimum deltaR for the match
+    # maxDPtRel   = cms.double(3.0),                  # Minimum deltaPt/Pt for the match (not used in GenJetMatcher)
+    resolveAmbiguities=cms.bool(True),  # Forbid two RECO objects to match to the same GEN object
+    resolveByMatchQuality=cms.bool(False),  # False = just match input in order; True = pick lowest deltaR pair first
+)
+process.genJetSequence = cms.Sequence(process.ak8GenJetsWithNu * process.ak8GenJetWithNuMatch * process.ak8GenJetsWithNuSoftDrop * process.ak8GenJetWithNuSoftDropMatch)
+# ---------------------------------------------------------
 
 # DeepNtuplizer
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
@@ -134,51 +168,40 @@ process.deepntuplizer.subjets = srcSubjets
 process.deepntuplizer.usePuppi = cms.bool(usePuppi)
 process.deepntuplizer.bDiscriminators = bTagDiscriminators
 
-process.deepntuplizer.fjKeepFlavors = cms.untracked.vuint32(options.fjKeepFlavors)
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
-
-train_samples = [
-    '/ZprimeToTT_M-1000_W-10_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
-    '/ZprimeToTT_M-3000_W-30_TuneCUETP8M1_13TeV-madgraphMLM-pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
-    '/ZprimeToWW_narrow_M-1000_13TeV-madgraph/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
-    '/ZprimeToWW_narrow_M-3000_13TeV-madgraph/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
-    '/BulkGravToZZToZhadZhad_narrow_M-1000_13TeV-madgraph/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
-    '/BulkGravToZZToZhadZhad_narrow_M-3000_13TeV-madgraph/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
-    '/BulkGravTohhTohbbhbb_narrow_M-1000_13TeV-madgraph/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
-    '/BulkGravTohhTohbbhbb_narrow_M-3000_13TeV-madgraph/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
-    '/QCD_Pt_300to470_TuneCUETP8M1_13TeV_pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1/MINIAODSIM',
-    '/QCD_Pt_1000to1400_TuneCUETP8M1_13TeV_pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6_ext1-v1/MINIAODSIM',
-    '/QCD_Pt-15to7000_TuneCUETP8M1_FlatP6_13TeV_pythia8/RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/MINIAODSIM',
- ]
-if options.inputDataset in train_samples:
+process.deepntuplizer.isTrainSample = options.isTrainSample
+if not options.inputDataset:
+    # interactive running
     process.deepntuplizer.isTrainSample = False
 #==============================================================================================================================#
-# Electron ID, following prescription in
-# https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
-# set up everything that is needed to compute electron IDs and
-# add the ValueMaps with ID decisions into the event data stream
+fillElectronVars = False
+fillMuonVars = False
 
-# Load tools and function definitions
-from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+process.deepntuplizer.fillElectronVars = fillElectronVars
+process.deepntuplizer.fillMuonVars = fillMuonVars
 
-switchOnVIDElectronIdProducer(process, DataFormat.MiniAOD)
+if fillElectronVars:
+    # Electron ID, following prescription in
+    # https://twiki.cern.ch/twiki/bin/viewauth/CMS/CutBasedElectronIdentificationRun2
+    # set up everything that is needed to compute electron IDs and
+    # add the ValueMaps with ID decisions into the event data stream
 
-# Define which IDs we want to produce
-my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff']
+    # Load tools and function definitions
+    from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
 
-# Add them to the VID producer
-for idmod in my_id_modules:
-    setupAllVIDIdsInModule(process, idmod, setupVIDElectronSelection)
+    switchOnVIDElectronIdProducer(process, DataFormat.MiniAOD)
 
-# Set ID tags
-process.deepntuplizer.eleVetoIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-veto")
-process.deepntuplizer.eleLooseIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose")
-process.deepntuplizer.eleMediumIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-medium")
-process.deepntuplizer.eleTightIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight")
+    # Define which IDs we want to produce
+    my_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff']
 
+    # Add them to the VID producer
+    for idmod in my_id_modules:
+        setupAllVIDIdsInModule(process, idmod, setupVIDElectronSelection)
+
+    # Set ID tags
+    process.deepntuplizer.eleVetoIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-veto")
+    process.deepntuplizer.eleLooseIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose")
+    process.deepntuplizer.eleMediumIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-medium")
+    process.deepntuplizer.eleTightIds = cms.InputTag("egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight")
 # ---------------------------------------------------------
-
-# process.deepntuplizer.gluonReduction = cms.double(options.gluonReduction)
-
-# process.p = cms.Path(process.QGTagger + process.genJetSequence * process.deepntuplizer)
-process.p = cms.Path(process.deepntuplizer)
+process.p = cms.Path(process.genJetSequence * process.deepntuplizer)

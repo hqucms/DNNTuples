@@ -13,25 +13,31 @@
 namespace deepntuples {
 
 void PFCompleteFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
+  fillElectronVars_ = iConfig.getUntrackedParameter<bool>("fillElectronVars", false);
+  fillMuonVars_ = iConfig.getUntrackedParameter<bool>("fillMuonVars", false);
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
   svToken_ = cc.consumes<reco::VertexCompositePtrCandidateCollection>(iConfig.getParameter<edm::InputTag>("SVs"));
-  muonToken_ = cc.consumes<edm::View<pat::Muon>>(iConfig.getParameter<edm::InputTag>("muons"));
-  electronToken_ = cc.consumes<edm::View<pat::Electron>>(iConfig.getParameter<edm::InputTag>("electrons"));
-  vetoIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleVetoIds"));
-  looseIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleLooseIds"));
-  mediumIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleMediumIds"));
-  tightIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleTightIds"));
+  if (fillMuonVars_) muonToken_ = cc.consumes<edm::View<pat::Muon>>(iConfig.getParameter<edm::InputTag>("muons"));
+  if (fillElectronVars_) {
+    electronToken_ = cc.consumes<edm::View<pat::Electron>>(iConfig.getParameter<edm::InputTag>("electrons"));
+    vetoIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleVetoIds"));
+    looseIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleLooseIds"));
+    mediumIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleMediumIds"));
+    tightIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleTightIds"));
+  }
 }
 
 void PFCompleteFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   iEvent.getByToken(vtxToken_, vertices);
   iEvent.getByToken(svToken_, SVs);
-  iEvent.getByToken(muonToken_, muons);
-  iEvent.getByToken(electronToken_, electrons);
-  iEvent.getByToken(vetoIdToken_, veto_id_decisions);
-  iEvent.getByToken(looseIdToken_, loose_id_decisions);
-  iEvent.getByToken(mediumIdToken_, medium_id_decisions);
-  iEvent.getByToken(tightIdToken_, tight_id_decisions);
+  if (fillMuonVars_) iEvent.getByToken(muonToken_, muons);
+  if (fillElectronVars_) {
+    iEvent.getByToken(electronToken_, electrons);
+    iEvent.getByToken(vetoIdToken_, veto_id_decisions);
+    iEvent.getByToken(looseIdToken_, loose_id_decisions);
+    iEvent.getByToken(mediumIdToken_, medium_id_decisions);
+    iEvent.getByToken(tightIdToken_, tight_id_decisions);
+  }
 
   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", builder_);
 }
@@ -49,6 +55,7 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("part_deltaR");
   data.addMulti<float>("part_puppiw");
   data.addMulti<float>("part_pt");
+  data.addMulti<float>("part_abseta");
   data.addMulti<float>("part_mass");
 
   data.addMulti<float>("part_ptrel_log");
@@ -144,22 +151,27 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     trackInfoMap[cand].buildTrackInfo(builder_, *cand, jet, vertices->at(0));
     // map to pat muons
     muonMap[cand];
-    if (std::abs(cand->pdgId())==13){
-      for (unsigned i=0; i<muons->size(); ++i){
-        if (reco::deltaR2(*cand, muons->at(i)) < 1.e-6){
-          muonMap[cand] = muons->ptrAt(i); break;
+    if (fillMuonVars_){
+      if (std::abs(cand->pdgId())==13){
+        for (unsigned i=0; i<muons->size(); ++i){
+          if (reco::deltaR2(*cand, muons->at(i)) < 1.e-6){
+            muonMap[cand] = muons->ptrAt(i); break;
+          }
         }
       }
     }
     // map to pat electrons
     electronMap[cand];
-    if (std::abs(cand->pdgId())==11){
-      for (unsigned i=0; i<electrons->size(); ++i){
-        if (reco::deltaR2(*cand, electrons->at(i)) < 1.e-6){
-          electronMap[cand] = electrons->ptrAt(i); break;
+    if (fillElectronVars_){
+      if (std::abs(cand->pdgId())==11){
+        for (unsigned i=0; i<electrons->size(); ++i){
+          if (reco::deltaR2(*cand, electrons->at(i)) < 1.e-6){
+            electronMap[cand] = electrons->ptrAt(i); break;
+          }
         }
       }
     }
+
   }
 
   // sort -- default is by pt
@@ -182,6 +194,7 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     data.fillMulti<float>("part_deltaR", reco::deltaR(*cand, jet));
     data.fillMulti<float>("part_puppiw", cand->puppiWeight());
     data.fillMulti<float>("part_pt", cand->pt());
+    data.fillMulti<float>("part_abseta", std::abs(cand->eta()));
     data.fillMulti<float>("part_mass", cand->mass());
 
     data.fillMulti<float>("part_ptrel_log", catchInfs(std::log(cand->pt()/jet.pt()), -99));
