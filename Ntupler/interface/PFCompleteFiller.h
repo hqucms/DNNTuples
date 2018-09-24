@@ -43,25 +43,6 @@ private:
   edm::Handle<reco::VertexCompositePtrCandidateCollection> SVs;
 
   edm::ESHandle<TransientTrackBuilder> builder_;
-
-  // muon
-  edm::EDGetTokenT<edm::View<pat::Muon>>           muonToken_;
-  edm::Handle<edm::View<pat::Muon>>                muons;
-
-  // electron
-  edm::EDGetTokenT<edm::View<pat::Electron>>       electronToken_;
-  edm::EDGetTokenT<edm::ValueMap<bool> >           vetoIdToken_;
-  edm::EDGetTokenT<edm::ValueMap<bool> >           looseIdToken_;
-  edm::EDGetTokenT<edm::ValueMap<bool> >           mediumIdToken_;
-  edm::EDGetTokenT<edm::ValueMap<bool> >           tightIdToken_;
-  edm::Handle<edm::View<pat::Electron>>            electrons;
-  edm::Handle<edm::ValueMap<bool> >                veto_id_decisions;
-  edm::Handle<edm::ValueMap<bool> >                loose_id_decisions;
-  edm::Handle<edm::ValueMap<bool> >                medium_id_decisions;
-  edm::Handle<edm::ValueMap<bool> >                tight_id_decisions;
-
-  bool fillElectronVars_ = false;
-  bool fillMuonVars_ = false;
 };
 
 } /* namespace deepntuples */

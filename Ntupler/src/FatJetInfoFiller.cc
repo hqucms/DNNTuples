@@ -13,7 +13,7 @@ namespace deepntuples {
 void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
   genParticlesToken_ = cc.consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
   fjTagInfoName = iConfig.getParameter<std::string>("fjTagInfoName");
-  isPuppi_ = iConfig.getParameter<bool>("usePuppi");
+  useReclusteredJets_ = iConfig.getParameter<bool>("useReclusteredJets");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
   fjRadiusSize = std::to_string(int(10*jetR_));
@@ -57,7 +57,8 @@ void FatJetInfoFiller::book() {
 
   data.add<int>("sample_isQCD", 0);
 
-  data.add<int>("sample_usePuppiJets", isPuppi_);
+  data.add<int>("sample_useReclusteredJets", useReclusteredJets_);
+  data.add<int>("sample_hasPuppiWeightedDaughters", 0);
 
 //  // legacy labels
 //  data.add<int>("fj_labelLegacy", 0);
@@ -101,12 +102,8 @@ void FatJetInfoFiller::book() {
 
   // soft drop
   data.add<float>("fj_sdmass", 0);
-
-  // puppi
-  data.add<float>("fjPuppi_tau21", 0);
-  data.add<float>("fjPuppi_tau32", 0);
-  data.add<float>("fjPuppi_sdmass", 0);
-  data.add<float>("fjPuppi_corrsdmass", 0);
+  data.add<float>("fj_sdmass_fromsubjets", 0);
+  data.add<float>("fj_corrsdmass", 0);
 
   // subjets: soft drop gives up to 2 subjets
   data.add<float>("fj_n_sdsubjets", 0);
@@ -179,6 +176,8 @@ void FatJetInfoFiller::book() {
 
 bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
 
+  data.fill<int>("sample_hasPuppiWeightedDaughters", jet_helper.hasPuppiWeightedDaughters());
+
   // JMAR label
   {
     auto jmar = fjmatch_.flavorJMAR(&jet, *genParticlesHandle, 0.6);
@@ -244,16 +243,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fj_mass", jet.mass());
 
   // substructure
-  float tau1 = -1, tau2 = -1, tau3 = -1;
-  if (isPuppi_){
-    tau1 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau1");
-    tau2 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau2");
-    tau3 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau3");
-  }else{
-    tau1 = jet.userFloat("NjettinessAK" + fjRadiusSize +":tau1");
-    tau2 = jet.userFloat("NjettinessAK" + fjRadiusSize +":tau2");
-    tau3 = jet.userFloat("NjettinessAK" + fjRadiusSize +":tau3");
-  }
+  float tau1 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau1");
+  float tau2 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau2");
+  float tau3 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau3");
   data.fill<float>("fj_tau1", tau1);
   data.fill<float>("fj_tau2", tau2);
   data.fill<float>("fj_tau3", tau3);
@@ -261,68 +253,31 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fj_tau32", tau2 > 0 ? tau3/tau2 : 1.01);
 
   // soft drop
-  if (isPuppi_){
-    data.fill<float>("fj_sdmass", jet.userFloat("ak" + fjRadiusSize +"PFJetsPuppiSoftDropMass"));
-  }else{
-    data.fill<float>("fj_sdmass", jet.userFloat("ak" + fjRadiusSize +"PFJetsCHSSoftDropMass"));
-  }
-
-  // puppi
-  float puppi_tau1 = -1, puppi_tau2 = -1, puppi_tau3 = -1;
-  if (isPuppi_){
-    puppi_tau1 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau1");
-    puppi_tau2 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau2");
-    puppi_tau3 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau3");
-  }else{
-    puppi_tau1 = jet.userFloat("ak" + fjRadiusSize +"PFJetsPuppiValueMap:NjettinessAK" + fjRadiusSize +"PuppiTau1");
-    puppi_tau2 = jet.userFloat("ak" + fjRadiusSize +"PFJetsPuppiValueMap:NjettinessAK" + fjRadiusSize +"PuppiTau2");
-    puppi_tau3 = jet.userFloat("ak" + fjRadiusSize +"PFJetsPuppiValueMap:NjettinessAK" + fjRadiusSize +"PuppiTau3");
-  }
-  data.fill<float>("fjPuppi_tau21", puppi_tau1 > 0 ? puppi_tau2/puppi_tau1 : 1.01);
-  data.fill<float>("fjPuppi_tau32", puppi_tau2 > 0 ? puppi_tau3/puppi_tau2 : 1.01);
+  auto msd_uncorr = jet.userFloat("ak" + fjRadiusSize +"PFJetsPuppiSoftDropMass");
+  data.fill<float>("fj_sdmass", msd_uncorr);
+  data.fill<float>("fj_sdmass_fromsubjets", jet.groomedMass());
 
   // subjets: soft drop gives up to 2 subjets
   const auto& subjets = jet_helper.getSubJets();
-  std::vector<const pat::Jet*> puppiSubjets;
-  if (isPuppi_){
-    puppiSubjets = subjets;
-  }else{
-    for (const auto & sj : jet.subjets("SoftDropPuppi")){
-      puppiSubjets.push_back(&(*sj));
-    }
-  }
-
-  auto msd_pair = jet_helper.getCorrectedPuppiSoftDropMass(puppiSubjets);
-  data.fill<float>("fjPuppi_sdmass", msd_pair.first);
-  data.fill<float>("fjPuppi_corrsdmass", msd_pair.second);
 
   data.fill<float>("fj_n_sdsubjets", subjets.size());
+  data.fill<float>("fj_corrsdmass", jet_helper.getCorrectedPuppiSoftDropMass(subjets).second);
 
   if (subjets.size() > 0){
     const auto &sj1 = subjets.at(0);
-    JetHelper jh1(sj1);
     data.fill<float>("fj_sdsj1_pt", sj1->pt());
     data.fill<float>("fj_sdsj1_eta", sj1->eta());
     data.fill<float>("fj_sdsj1_phi", sj1->phi());
     data.fill<float>("fj_sdsj1_mass", sj1->mass());
     data.fill<float>("fj_sdsj1_csv", sj1->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
-    data.fill<float>("fj_sdsj1_ptD", jh1.ptD());
-    data.fill<float>("fj_sdsj1_axis1", jh1.axis1());
-    data.fill<float>("fj_sdsj1_axis2", jh1.axis2());
-    data.fill<float>("fj_sdsj1_mult", jh1.mult());
 
     if (subjets.size() > 1){
       const auto &sj2 = subjets.at(1);
-      JetHelper jh2(sj2);
       data.fill<float>("fj_sdsj2_pt", sj2->pt());
       data.fill<float>("fj_sdsj2_eta", sj2->eta());
       data.fill<float>("fj_sdsj2_phi", sj2->phi());
       data.fill<float>("fj_sdsj2_mass", sj2->mass());
       data.fill<float>("fj_sdsj2_csv", sj2->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags"));
-      data.fill<float>("fj_sdsj2_ptD", jh2.ptD());
-      data.fill<float>("fj_sdsj2_axis1", jh2.axis1());
-      data.fill<float>("fj_sdsj2_axis2", jh2.axis2());
-      data.fill<float>("fj_sdsj2_mult", jh2.mult());
 
       // some variables used in a baseline tagger
       float deltaR = reco::deltaR(*sj1, *sj2);
@@ -352,8 +307,8 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     auto pos = [](double x){ return x<0 ? 0 : x; };
     data.fill<float>("fj_genjet_sdmass", pos(sdgenjet->mass()));
     data.fill<float>("fj_genjet_sdmass_sqrt", std::sqrt(pos(sdgenjet->mass())));
-    data.fill<float>("fj_genOverReco_sdmass", catchInfs(pos(sdgenjet->mass()) / pos(msd_pair.first), 1));
-    data.fill<float>("fj_genOverReco_sdmass_null", catchInfs(pos(sdgenjet->mass()) / pos(msd_pair.first), 0));
+    data.fill<float>("fj_genOverReco_sdmass", catchInfs(pos(sdgenjet->mass()) / pos(msd_uncorr), 1));
+    data.fill<float>("fj_genOverReco_sdmass_null", catchInfs(pos(sdgenjet->mass()) / pos(msd_uncorr), 0));
   }
 
 

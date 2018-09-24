@@ -10,6 +10,7 @@
 
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
+#include "PhysicsTools/SelectorUtils/interface/PFJetIDSelectionFunctor.h"
 
 #include "DeepNTuples/NtupleCommons/interface/NtupleBase.h"
 #include "DeepNTuples/BTagHelpers/interface/FlavorDefinition.h"
@@ -19,7 +20,8 @@ namespace deepntuples {
 class JetInfoFiller: public NtupleBase {
 public:
   JetInfoFiller() : JetInfoFiller("") {}
-  JetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), flavorDef(jetR) {}
+  JetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), flavorDef(jetR),
+      jetIdTight(PFJetIDSelectionFunctor::WINTER17, PFJetIDSelectionFunctor::TIGHT) {}
   virtual ~JetInfoFiller() {}
 
   // get input parameters from the cfg file
@@ -52,20 +54,10 @@ private:
 
   unsigned event_ = 0;
 
-//  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetMatchReclusterToken_;
-//  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetMatchWithNuToken_;
-//  edm::Handle<edm::Association<reco::GenJetCollection>> genJetMatchRecluster;
-//  edm::Handle<edm::Association<reco::GenJetCollection>> genJetMatchWithNu;
-
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;
 
-
-//  edm::EDGetTokenT<pat::MuonCollection> muonsToken_;
-//  edm::Handle<pat::MuonCollection> muonsHandle;
-//
-//  edm::EDGetTokenT<pat::ElectronCollection> electronsToken_;
-//  edm::Handle<pat::ElectronCollection> electronsHandle;
+  PFJetIDSelectionFunctor jetIdTight;
 
 };
 

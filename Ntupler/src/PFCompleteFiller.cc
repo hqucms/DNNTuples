@@ -13,32 +13,13 @@
 namespace deepntuples {
 
 void PFCompleteFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
-  fillElectronVars_ = iConfig.getUntrackedParameter<bool>("fillElectronVars", false);
-  fillMuonVars_ = iConfig.getUntrackedParameter<bool>("fillMuonVars", false);
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
   svToken_ = cc.consumes<reco::VertexCompositePtrCandidateCollection>(iConfig.getParameter<edm::InputTag>("SVs"));
-  if (fillMuonVars_) muonToken_ = cc.consumes<edm::View<pat::Muon>>(iConfig.getParameter<edm::InputTag>("muons"));
-  if (fillElectronVars_) {
-    electronToken_ = cc.consumes<edm::View<pat::Electron>>(iConfig.getParameter<edm::InputTag>("electrons"));
-    vetoIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleVetoIds"));
-    looseIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleLooseIds"));
-    mediumIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleMediumIds"));
-    tightIdToken_ = cc.consumes<edm::ValueMap<bool>>(iConfig.getParameter<edm::InputTag>("eleTightIds"));
-  }
 }
 
 void PFCompleteFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   iEvent.getByToken(vtxToken_, vertices);
   iEvent.getByToken(svToken_, SVs);
-  if (fillMuonVars_) iEvent.getByToken(muonToken_, muons);
-  if (fillElectronVars_) {
-    iEvent.getByToken(electronToken_, electrons);
-    iEvent.getByToken(vetoIdToken_, veto_id_decisions);
-    iEvent.getByToken(looseIdToken_, loose_id_decisions);
-    iEvent.getByToken(mediumIdToken_, medium_id_decisions);
-    iEvent.getByToken(tightIdToken_, tight_id_decisions);
-  }
-
   iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", builder_);
 }
 
@@ -116,25 +97,7 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("part_btagSip3dVal");
   data.addMulti<float>("part_btagSip3dSig");
   data.addMulti<float>("part_btagJetDistVal");
-//  data.addMulti<float>("part_btagJetDistSig"); // always gives 0
-
-  // muon info
-  data.addMulti<float>("part_muonIsLoose");
-  data.addMulti<float>("part_muonIsMedium");
-  data.addMulti<float>("part_muonIsTight");
-  data.addMulti<float>("part_muonIsHighPt");
-  data.addMulti<float>("part_muonSegmentCompatibility");
-  data.addMulti<float>("part_muonNumberOfMatchedStations");
-
-  // electron info
-  data.addMulti<float>("part_electronVetoId");
-  data.addMulti<float>("part_electronLooseId");
-  data.addMulti<float>("part_electronMediumId");
-  data.addMulti<float>("part_electronTightId");
-  data.addMulti<float>("part_electronR9");
-  data.addMulti<float>("part_electronSigmaIetaIeta");
-  data.addMulti<float>("part_electronHadronicOverEm");
-  data.addMulti<float>("part_electronPassConversionVeto");
+  data.addMulti<float>("part_btagJetDistSig"); // always gives 0?
 
 }
 
@@ -142,43 +105,14 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   std::vector<const pat::PackedCandidate*> pfCands;
   std::unordered_map<const pat::PackedCandidate*, TrackInfoBuilder> trackInfoMap;
-  std::unordered_map<const pat::PackedCandidate*, edm::Ptr<pat::Muon>> muonMap;
-  std::unordered_map<const pat::PackedCandidate*, edm::Ptr<pat::Electron>> electronMap;
   for (const auto * cand : jet_helper.getJetConstituents()){
     pfCands.push_back(cand);
     // build track info map
     trackInfoMap[cand];
     trackInfoMap[cand].buildTrackInfo(builder_, *cand, jet, vertices->at(0));
-    // map to pat muons
-    muonMap[cand];
-    if (fillMuonVars_){
-      if (std::abs(cand->pdgId())==13){
-        for (unsigned i=0; i<muons->size(); ++i){
-          if (reco::deltaR2(*cand, muons->at(i)) < 1.e-6){
-            muonMap[cand] = muons->ptrAt(i); break;
-          }
-        }
-      }
-    }
-    // map to pat electrons
-    electronMap[cand];
-    if (fillElectronVars_){
-      if (std::abs(cand->pdgId())==11){
-        for (unsigned i=0; i<electrons->size(); ++i){
-          if (reco::deltaR2(*cand, electrons->at(i)) < 1.e-6){
-            electronMap[cand] = electrons->ptrAt(i); break;
-          }
-        }
-      }
-    }
-
   }
 
   // sort -- default is by pt
-//  std::sort(pfCands.begin(), pfCands.end(), [&](const pat::PackedCandidate *p1, const pat::PackedCandidate *p2){
-//    return trackInfoMap.at(p1).getTrackSip2dSig() > trackInfoMap.at(p2).getTrackSip2dSig();
-//  });
-
   data.fill<int>("n_parts", pfCands.size());
   data.fill<float>("nparts", pfCands.size());
 
@@ -186,20 +120,26 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   for (const auto *cand : pfCands){
 
-    // basic kinematics, valid for both charged and neutral
-    data.fillMulti<float>("part_ptrel", cand->pt()/jet.pt());
-    data.fillMulti<float>("part_erel", cand->energy()/jet.energy());
-    data.fillMulti<float>("part_phirel", reco::deltaPhi(*cand, jet));
-    data.fillMulti<float>("part_etarel", etasign * (cand->eta() - jet.eta()));
-    data.fillMulti<float>("part_deltaR", reco::deltaR(*cand, jet));
-    data.fillMulti<float>("part_puppiw", cand->puppiWeight());
-    data.fillMulti<float>("part_pt", cand->pt());
-    data.fillMulti<float>("part_abseta", std::abs(cand->eta()));
-    data.fillMulti<float>("part_mass", cand->mass());
+    auto puppiP4 = cand->p4();
 
-    data.fillMulti<float>("part_ptrel_log", catchInfs(std::log(cand->pt()/jet.pt()), -99));
-    data.fillMulti<float>("part_erel_log", catchInfs(std::log(cand->energy()/jet.energy()), -99));
-    data.fillMulti<float>("part_pt_log", catchInfs(std::log(cand->pt()), -99));
+    // for jets stored in MiniAOD, need to rescale p4 by the puppi weight
+    if (!jet_helper.hasPuppiWeightedDaughters()) puppiP4 *= cand->puppiWeight();
+
+    // basic kinematics, valid for both charged and neutral
+    data.fillMulti<float>("part_pt", puppiP4.pt());
+    data.fillMulti<float>("part_ptrel", puppiP4.pt()/jet.pt());
+    data.fillMulti<float>("part_erel", puppiP4.energy()/jet.energy());
+    data.fillMulti<float>("part_phirel", reco::deltaPhi(puppiP4, jet));
+    data.fillMulti<float>("part_etarel", etasign * (puppiP4.eta() - jet.eta()));
+    data.fillMulti<float>("part_deltaR", reco::deltaR(puppiP4, jet));
+    data.fillMulti<float>("part_abseta", std::abs(puppiP4.eta()));
+    data.fillMulti<float>("part_mass", puppiP4.mass());
+
+    data.fillMulti<float>("part_ptrel_log", catchInfs(std::log(puppiP4.pt()/jet.pt()), -99));
+    data.fillMulti<float>("part_erel_log", catchInfs(std::log(puppiP4.energy()/jet.energy()), -99));
+    data.fillMulti<float>("part_pt_log", catchInfs(std::log(puppiP4.pt()), -99));
+
+    data.fillMulti<float>("part_puppiw", cand->puppiWeight());
 
     double minDR = 999;
     for (const auto &sv : *SVs){
@@ -279,47 +219,8 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     data.fillMulti<float>("part_btagSip3dVal", trkinfo.getTrackSip3dVal());
     data.fillMulti<float>("part_btagSip3dSig", trkinfo.getTrackSip3dSig());
     data.fillMulti<float>("part_btagJetDistVal", trkinfo.getTrackJetDistVal());
-//    data.fillMulti<float>("part_btagJetDistSig", trkinfo.getTrackJetDistSig());
+    data.fillMulti<float>("part_btagJetDistSig", trkinfo.getTrackJetDistSig());
 
-    // muon info
-    const auto mu = muonMap.at(cand);
-    if (mu.isNonnull()){
-      data.fillMulti<float>("part_muonIsLoose", mu->isLooseMuon());
-      data.fillMulti<float>("part_muonIsMedium", mu->isMediumMuon());
-      data.fillMulti<float>("part_muonIsTight", mu->isTightMuon(vertices->at(0)));
-      data.fillMulti<float>("part_muonIsHighPt", mu->isHighPtMuon(vertices->at(0)));
-      data.fillMulti<float>("part_muonSegmentCompatibility", mu->segmentCompatibility());
-      data.fillMulti<float>("part_muonNumberOfMatchedStations", mu->numberOfMatchedStations());
-    }else{
-      data.fillMulti<float>("part_muonIsLoose", 0);
-      data.fillMulti<float>("part_muonIsMedium", 0);
-      data.fillMulti<float>("part_muonIsTight", 0);
-      data.fillMulti<float>("part_muonIsHighPt", 0);
-      data.fillMulti<float>("part_muonSegmentCompatibility", 0);
-      data.fillMulti<float>("part_muonNumberOfMatchedStations", 0);
-    }
-
-    // electron info
-    const auto ele = electronMap.at(cand);
-    if (ele.isNonnull()){
-      data.fillMulti<float>("part_electronVetoId", (*veto_id_decisions)[ele]);
-      data.fillMulti<float>("part_electronLooseId", (*loose_id_decisions)[ele]);
-      data.fillMulti<float>("part_electronMediumId", (*medium_id_decisions)[ele]);
-      data.fillMulti<float>("part_electronTightId", (*tight_id_decisions)[ele]);
-      data.fillMulti<float>("part_electronR9", ele->full5x5_r9());
-      data.fillMulti<float>("part_electronSigmaIetaIeta", ele->full5x5_sigmaIetaIeta());
-      data.fillMulti<float>("part_electronHadronicOverEm", ele->hadronicOverEm());
-      data.fillMulti<float>("part_electronPassConversionVeto", ele->passConversionVeto());
-    }else{
-      data.fillMulti<float>("part_electronVetoId", 0);
-      data.fillMulti<float>("part_electronLooseId", 0);
-      data.fillMulti<float>("part_electronMediumId", 0);
-      data.fillMulti<float>("part_electronTightId", 0);
-      data.fillMulti<float>("part_electronR9", 0);
-      data.fillMulti<float>("part_electronSigmaIetaIeta", 0);
-      data.fillMulti<float>("part_electronHadronicOverEm", 0);
-      data.fillMulti<float>("part_electronPassConversionVeto", 0);
-    }
 
   }
 

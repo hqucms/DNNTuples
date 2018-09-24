@@ -78,32 +78,7 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
   data.fill<float>("jet_phi", jet.phi());
 
   // jet id
-  //https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016
-  bool jet_looseId_ = true;
-  bool jet_tightId_ = true;
-  try{
-    float NHF  = jet.neutralHadronEnergyFraction();
-    float NEMF = jet.neutralEmEnergyFraction();
-    float CHF  = jet.chargedHadronEnergyFraction();
-//    float MUF  = jet.muonEnergyFraction();
-    float CEMF = jet.chargedEmEnergyFraction();
-    float NumConst = jet.chargedMultiplicity()+jet.neutralMultiplicity();
-    float NumNeutralParticles = jet.neutralMultiplicity();
-    float CHM      = jet.chargedMultiplicity();
-
-    jet_looseId_ = ((NHF<0.99 && NEMF<0.99 && NumConst>1) && ((abs(jet.eta())<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(jet.eta())>2.4) && abs(jet.eta())<=2.7) ||
-        (NHF<0.98 && NEMF>0.01 && NumNeutralParticles>2 && abs(jet.eta())>2.7 && abs(jet.eta())<=3.0 ) ||
-        (NEMF<0.90 && NumNeutralParticles>10 && abs(jet.eta())>3.0 );
-
-    jet_tightId_ = ( (NHF<0.90 && NEMF<0.90 && NumConst>1) && ((abs(jet.eta())<=2.4 && CHF>0 && CHM>0 && CEMF<0.99) || abs(jet.eta())>2.4) && abs(jet.eta())<=2.7 ) ||
-        (NEMF<0.90 && NumNeutralParticles>2 && abs(jet.eta())>2.7 && abs(jet.eta())<=3.0) ||
-        (NEMF<0.90 && NumNeutralParticles>10 && abs(jet.eta())>3.0);
-  }catch(const cms::Exception &e){
-    // energy fraction not supported on subjets/puppi?
-  }
-
-  data.fill<float>("jet_looseId", jet_looseId_);
-  data.fill<float>("jet_tightId", jet_tightId_);
+  data.fill<float>("jet_tightId", jetIdTight(jet));
 
   for(const auto& disc : btag_discriminators_) {
     std::string name(disc);
@@ -143,7 +118,6 @@ void JetInfoFiller::book() {
   data.add<float>("jet_phi", 0);
 
   // jet id
-  data.add<float>("jet_looseId", 0);
   data.add<float>("jet_tightId", 0);
 
   for(auto name : btag_discriminators_) {

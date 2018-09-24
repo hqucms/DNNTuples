@@ -37,7 +37,7 @@ protected:
 
 private:
   FatJetMatching fjmatch_;
-  bool isPuppi_ = false;
+  bool useReclusteredJets_ = false;
   bool isQCDSample_ = false;
   bool isTrainSample_ = false;
 
