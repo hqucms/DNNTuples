@@ -14,7 +14,7 @@ git cms-merge-topic -u hqucms:deep-boosted-jets-rebase-102X
 
 # clone this repo into "DeepNTuples" directory
 git clone ssh://git@gitlab.cern.ch:7999/hqu/DNNTuplesAK8.git DeepNTuples -b 94X
-scram b -j8
+scram b -j24
 ```
 
 ## Submit jobs via CRAB
