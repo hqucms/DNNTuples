@@ -42,7 +42,7 @@ private:
   bool isTrainSample_ = false;
 
   std::string fjTagInfoName;
-  std::string fjRadiusSize;
+  std::string fjName;
 
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;

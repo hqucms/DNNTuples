@@ -7,6 +7,7 @@
 
 #include "DeepNTuples/Ntupler/interface/FatJetInfoFiller.h"
 #include <string>
+#include <algorithm>
 
 namespace deepntuples {
 
@@ -16,7 +17,7 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   useReclusteredJets_ = iConfig.getParameter<bool>("useReclusteredJets");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
-  fjRadiusSize = std::to_string(int(10*jetR_));
+  fjName = iConfig.getParameter<std::string>("jetType") + std::to_string(int(10*jetR_));
 }
 
 void FatJetInfoFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -243,9 +244,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fj_mass", jet.mass());
 
   // substructure
-  float tau1 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau1");
-  float tau2 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau2");
-  float tau3 = jet.userFloat("NjettinessAK" + fjRadiusSize +"Puppi:tau3");
+  float tau1 = jet.userFloat("Njettiness" + fjName +"Puppi:tau1");
+  float tau2 = jet.userFloat("Njettiness" + fjName +"Puppi:tau2");
+  float tau3 = jet.userFloat("Njettiness" + fjName +"Puppi:tau3");
   data.fill<float>("fj_tau1", tau1);
   data.fill<float>("fj_tau2", tau2);
   data.fill<float>("fj_tau3", tau3);
@@ -253,7 +254,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<float>("fj_tau32", tau2 > 0 ? tau3/tau2 : 1.01);
 
   // soft drop
-  auto msd_uncorr = jet.userFloat("ak" + fjRadiusSize +"PFJetsPuppiSoftDropMass");
+  std::string name(fjName);
+  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+  auto msd_uncorr = jet.userFloat(name +"PFJetsPuppiSoftDropMass");
   data.fill<float>("fj_sdmass", msd_uncorr);
   data.fill<float>("fj_sdmass_fromsubjets", jet.groomedMass());
 

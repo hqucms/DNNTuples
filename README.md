@@ -2,18 +2,12 @@
 
 ## Setup
 ```
-cmsrel CMSSW_10_2_5
-cd CMSSW_10_2_5/src/
+cmsrel CMSSW_10_2_7
+cd CMSSW_10_2_7/src/
 cmsenv
 
-# MXNet
-scram setup /cvmfs/cms.cern.ch/slc6_amd64_gcc700/cms/cmssw/CMSSW_10_3_0_pre4/config/toolbox/slc6_amd64_gcc700/tools/selected/mxnet-predict.xml
-
-# get DeepAK8 PR
-git cms-merge-topic -u hqucms:deep-boosted-jets-rebase-102X
-
 # clone this repo into "DeepNTuples" directory
-git clone ssh://git@gitlab.cern.ch:7999/hqu/DNNTuplesAK8.git DeepNTuples -b 94X
+git clone https://github.com/hqucms/DNNTuplesAK8.git DeepNTuples -b 94X
 scram b -j24
 ```
 

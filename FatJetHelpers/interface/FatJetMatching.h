@@ -61,7 +61,6 @@ public:
 
   virtual ~FatJetMatching() {}
 
-  std::pair<FatJetFlavor, const reco::GenParticle*> flavor(const pat::Jet *jet, const reco::GenParticleCollection& genParticles);
   std::pair<FatJetFlavor, const reco::GenParticle*> flavorJMAR(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double genRadius = 0.6);
 
   std::pair<FatJetLabel, const reco::GenParticle*> flavorLabel(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double distR);

@@ -75,7 +75,7 @@ from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.MXNet.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
 
 useReclusteredJets = True
-jetR = 0.8
+jetR = 1.5
 
 bTagInfos = [
     'pfBoostedDoubleSVAK8TagInfos'
@@ -92,46 +92,38 @@ subjetBTagDiscriminators = [
     'pfDeepCSVJetTags:probbb',
 ]
 
-if useReclusteredJets:
-    JETCorrLevels = ['L2Relative', 'L3Absolute']
+JETCorrLevels = ['L2Relative', 'L3Absolute']
 
-    from DeepNTuples.Ntupler.jetToolbox_cff import jetToolbox
-    jetToolbox(process, 'ak8', 'dummySeq', 'out', associateTask=False,
-               PUMethod='Puppi', JETCorrPayload='AK8PFPuppi', JETCorrLevels=JETCorrLevels,
-               Cut='pt > 170.0 && abs(rapidity()) < 2.4',
-               miniAOD=True, runOnMC=True,
-               addNsub=True, maxTau=3,
-               addSoftDrop=True, addSoftDropSubjets=True, subJETCorrPayload='AK4PFPuppi', subJETCorrLevels=JETCorrLevels,
-               bTagDiscriminators=['pfCombinedInclusiveSecondaryVertexV2BJetTags'], subjetBTagDiscriminators=subjetBTagDiscriminators)
+from DeepNTuples.Ntupler.jetToolbox_cff import jetToolbox
+jetToolbox(process, 'ca15', 'dummySeq', 'out', associateTask=False,
+           PUMethod='Puppi', JETCorrPayload='AK8PFPuppi', JETCorrLevels=JETCorrLevels,
+           Cut='pt > 120.0 && abs(rapidity()) < 2.4',
+           miniAOD=True, runOnMC=True,
+           addNsub=True, maxTau=3,
+           addSoftDrop=True, addSoftDropSubjets=True, subJETCorrPayload='AK4PFPuppi', subJETCorrLevels=JETCorrLevels,
+           bTagDiscriminators=['pfCombinedInclusiveSecondaryVertexV2BJetTags'], subjetBTagDiscriminators=subjetBTagDiscriminators)
 
-    updateJetCollection(
-       process,
-       jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
-       rParam=jetR,
-       jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-       btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll,
-       btagInfos=bTagInfos,
-       postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
-    )
-    process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addTagInfos = cms.bool(True)
-    process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addBTagInfo = cms.bool(True)
+updateJetCollection(
+   process,
+   jetSource=cms.InputTag('packedPatJetsCA15PFPuppiSoftDrop'),
+   rParam=jetR,
+   jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
+   btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll,
+   btagInfos=bTagInfos,
+   postfix='CA15WithPuppiDaughters',
+)
+process.updatedPatJetsTransientCorrectedCA15WithPuppiDaughters.addTagInfos = cms.bool(True)
+process.updatedPatJetsTransientCorrectedCA15WithPuppiDaughters.addBTagInfo = cms.bool(True)
 
-    srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
-    hasPuppiWeightedDaughters = True
-else:
-    updateJetCollection(
-       process,
-       jetSource=cms.InputTag('slimmedJetsAK8'),
-       rParam=jetR,
-       jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-       btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll,
-       btagInfos=bTagInfos,
-    )
-    process.updatedPatJetsTransientCorrected.addTagInfos = cms.bool(True)
-    process.updatedPatJetsTransientCorrected.addBTagInfo = cms.bool(True)
+# configure DeepAK15
+from DeepNTuples.FatJetHelpers.pfDeepBoostedJetPreprocessParamsAK15_cfi import pfDeepBoostedJetPreprocessParams as params
+process.pfDeepBoostedJetTagInfosCA15WithPuppiDaughters.jet_radius = jetR
+process.pfMassDecorrelatedDeepBoostedJetTagsCA15WithPuppiDaughters.preprocessParams = params
+process.pfMassDecorrelatedDeepBoostedJetTagsCA15WithPuppiDaughters.model_path = 'DeepNTuples/FatJetHelpers/data/DeepBoostedJet/ak15/decorrelated/resnet-symbol.json'
+process.pfMassDecorrelatedDeepBoostedJetTagsCA15WithPuppiDaughters.param_path = 'DeepNTuples/FatJetHelpers/data/DeepBoostedJet/ak15/decorrelated/resnet.params'
 
-    srcJets = cms.InputTag('selectedUpdatedPatJets')
-    hasPuppiWeightedDaughters = False
+srcJets = cms.InputTag('selectedUpdatedPatJetsCA15WithPuppiDaughters')
+hasPuppiWeightedDaughters = True
 # ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask, addToProcessAndTask
 patTask = getPatAlgosToolsTask(process)
@@ -142,6 +134,9 @@ process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
 process.deepntuplizer.hasPuppiWeightedDaughters = hasPuppiWeightedDaughters
 process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll
+process.deepntuplizer.jetR = jetR
+process.deepntuplizer.jetType = 'CA'
+process.deepntuplizer.jetPtMin = 150
 
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
 process.deepntuplizer.isTrainSample = options.isTrainSample
