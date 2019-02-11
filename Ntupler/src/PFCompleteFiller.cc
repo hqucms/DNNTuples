@@ -113,8 +113,8 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   }
 
   // sort -- default is by pt
-  data.fill<int>("n_parts", pfCands.size());
-  data.fill<float>("nparts", pfCands.size());
+  data.fill<int>("n_pfcands", pfCands.size());
+  data.fill<float>("npfcands", pfCands.size());
 
   float etasign = jet.eta()>0 ? 1 : -1;
 
