@@ -67,7 +67,7 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 # process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
 # process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_data', '')
-process.GlobalTag = GlobalTag(process.GlobalTag, '94X_mc2017_realistic_v14', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '94X_mc2017_realistic_v17', '')
 print 'Using global tag', process.GlobalTag.globaltag
 
 # ---------------------------------------------------------
@@ -83,7 +83,13 @@ bTagInfos = [
 
 bTagDiscriminators = [
     'pfCombinedInclusiveSecondaryVertexV2BJetTags',
-    'pfBoostedDoubleSecondaryVertexAK8BJetTags'
+    'pfBoostedDoubleSecondaryVertexAK8BJetTags',
+    'pfDeepDoubleBvLJetTags:probHbb',
+    'pfDeepDoubleCvLJetTags:probHcc',
+    'pfDeepDoubleCvBJetTags:probHcc',
+    'pfMassIndependentDeepDoubleBvLJetTags:probHbb',
+    'pfMassIndependentDeepDoubleCvLJetTags:probHcc',
+    'pfMassIndependentDeepDoubleCvBJetTags:probHcc',
 ]
 
 subjetBTagDiscriminators = [
