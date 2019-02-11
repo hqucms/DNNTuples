@@ -12,7 +12,7 @@ def runCrabCommand(command, *args, **kwargs):
     try:
         return crabCommand(command, *args, **kwargs)
     except Exception as e:
-        print(getattr(e, 'message', repr(e)))
+        logging.error(getattr(e, 'message', repr(e)))
 
 
 def natural_sort(l):
