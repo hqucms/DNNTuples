@@ -44,6 +44,7 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("pfcand_pt_log");
 
   data.addMulti<float>("pfcand_drminsv");
+  data.addMulti<float>("pfcand_drminsvin");
   data.addMulti<float>("pfcand_drsubjet1");
   data.addMulti<float>("pfcand_drsubjet2");
 
@@ -142,11 +143,14 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     data.fillMulti<float>("pfcand_puppiw", cand->puppiWeight());
 
     double minDR = 999;
+    double minDRin = 2.*jetR_;
     for (const auto &sv : *SVs){
       double dr = reco::deltaR(*cand, sv);
       if (dr < minDR) minDR = dr;
+      if (dr < minDRin && reco::deltaR(jet, sv) < jetR_) minDRin = dr;
     }
     data.fillMulti<float>("pfcand_drminsv", minDR==999 ? -1 : minDR);
+    data.fillMulti<float>("pfcand_drminsvin", minDRin);
 
     const auto& subjets = jet_helper.getSubJets();
     data.fillMulti<float>("pfcand_drsubjet1", subjets.size()>0 ? reco::deltaR(*cand, *subjets.at(0)) : -1);
