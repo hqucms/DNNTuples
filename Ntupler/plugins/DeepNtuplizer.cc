@@ -41,8 +41,8 @@ private:
   bool has_puppi_weighted_daughters_ = false;
 
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
-//  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuMatchToken_;
-//  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchToken_;
+  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuMatchToken_;
+  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchToken_;
 
   edm::Service<TFileService> fs;
   TreeWriter *treeWriter = nullptr;
@@ -57,9 +57,9 @@ private:
 DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     jetR(iConfig.getParameter<double>("jetR")),
     has_puppi_weighted_daughters_(iConfig.getParameter<bool>("hasPuppiWeightedDaughters")),
-    jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets")))
-//    genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch"))),
-//    genJetWithNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsSoftDropMatch")))
+    jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
+    genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch"))),
+    genJetWithNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsSoftDropMatch")))
 {
 
   // register modules
@@ -98,19 +98,19 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   edm::Handle<edm::View<pat::Jet>> jets;
   iEvent.getByToken(jetToken_, jets);
 
-//  edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuMatchHandle;
-//  iEvent.getByToken(genJetWithNuMatchToken_, genJetWithNuMatchHandle);
-//
-//  edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchHandle;
-//  iEvent.getByToken(genJetWithNuSoftDropMatchToken_, genJetWithNuSoftDropMatchHandle);
+  edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuMatchHandle;
+  iEvent.getByToken(genJetWithNuMatchToken_, genJetWithNuMatchHandle);
+
+  edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchHandle;
+  iEvent.getByToken(genJetWithNuSoftDropMatchToken_, genJetWithNuSoftDropMatchHandle);
 
   for (unsigned idx=0; idx<jets->size(); ++idx){
     bool write_ = true;
 
     const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
     JetHelper jet_helper(&jet, has_puppi_weighted_daughters_);
-//    jet_helper.setGenjetWithNu((*genJetWithNuMatchHandle)[jets->refAt(idx)]);
-//    jet_helper.setGenjetWithNuSoftDrop((*genJetWithNuSoftDropMatchHandle)[jets->refAt(idx)]);
+    jet_helper.setGenjetWithNu((*genJetWithNuMatchHandle)[jets->refAt(idx)]);
+    jet_helper.setGenjetWithNuSoftDrop((*genJetWithNuSoftDropMatchHandle)[jets->refAt(idx)]);
 
     for (auto *m : modules_){
       if (!m->fillBranches(jet.correctedJet("Uncorrected"), idx, jet_helper)){

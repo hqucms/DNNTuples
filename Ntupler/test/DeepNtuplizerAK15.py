@@ -6,7 +6,7 @@ from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
-options.inputFiles = '/store/mc/RunIIFall17MiniAODv2/RSGluonToTT_M-3000_TuneCP5_13TeV-pythia8/MINIAODSIM/PU2017_12Apr2018_94X_mc2017_realistic_v14-v1/100000/E0AB2D2B-12B5-E811-8DBA-EC0D9A82260E.root'
+options.inputFiles = '/store/mc/RunIIFall17MiniAODv2/GluGluToBulkGravitonToHHTo4B_M-1000_narrow_13TeV-madgraph_correctedcfg/MINIAODSIM/PU2017_12Apr2018_94X_mc2017_realistic_v14-v1/270000/0E699888-A9C9-E811-A06F-0CC47AA53D64.root'
 options.maxEvents = -1
 
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
@@ -128,6 +128,48 @@ hasPuppiWeightedDaughters = True
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask, addToProcessAndTask
 patTask = getPatAlgosToolsTask(process)
 
+from RecoJets.JetProducers.ak8GenJets_cfi import ak8GenJets
+process.ak15GenJetsWithNu = ak8GenJets.clone(
+    src='packedGenParticles',
+    rParam=cms.double(jetR),
+    jetPtMin=100.0
+    )
+process.ak15GenJetsWithNuSoftDrop = process.ak15GenJetsWithNu.clone(
+    useSoftDrop=cms.bool(True),
+    zcut=cms.double(0.1),
+    beta=cms.double(0.0),
+    R0=cms.double(jetR),
+    useExplicitGhosts=cms.bool(True)
+    )
+process.ak15GenJetsWithNuMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR
+    src=srcJets,  # RECO jets (any View<Jet> is ok)
+    matched=cms.InputTag("ak15GenJetsWithNu"),  # GEN jets  (must be GenJetCollection)
+    mcPdgId=cms.vint32(),  # n/a
+    mcStatus=cms.vint32(),  # n/a
+    checkCharge=cms.bool(False),  # n/a
+    maxDeltaR=cms.double(jetR),  # Minimum deltaR for the match
+    # maxDPtRel   = cms.double(3.0),                  # Minimum deltaPt/Pt for the match (not used in GenJetMatcher)
+    resolveAmbiguities=cms.bool(True),  # Forbid two RECO objects to match to the same GEN object
+    resolveByMatchQuality=cms.bool(False),  # False = just match input in order; True = pick lowest deltaR pair first
+)
+process.ak15GenJetsWithNuSoftDropMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR
+    src=srcJets,  # RECO jets (any View<Jet> is ok)
+    matched=cms.InputTag("ak15GenJetsWithNuSoftDrop"),  # GEN jets  (must be GenJetCollection)
+    mcPdgId=cms.vint32(),  # n/a
+    mcStatus=cms.vint32(),  # n/a
+    checkCharge=cms.bool(False),  # n/a
+    maxDeltaR=cms.double(jetR),  # Minimum deltaR for the match
+    # maxDPtRel   = cms.double(3.0),                  # Minimum deltaPt/Pt for the match (not used in GenJetMatcher)
+    resolveAmbiguities=cms.bool(True),  # Forbid two RECO objects to match to the same GEN object
+    resolveByMatchQuality=cms.bool(False),  # False = just match input in order; True = pick lowest deltaR pair first
+)
+process.genJetTask = cms.Task(
+    process.ak15GenJetsWithNu,
+    process.ak15GenJetsWithNuMatch,
+    process.ak15GenJetsWithNuSoftDrop,
+    process.ak15GenJetsWithNuSoftDropMatch,
+)
+
 # DeepNtuplizer
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
@@ -137,6 +179,9 @@ process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTag
 process.deepntuplizer.jetR = jetR
 process.deepntuplizer.jetPtMin = 150
 
+process.deepntuplizer.genJetsMatch = 'ak15GenJetsWithNuMatch'
+process.deepntuplizer.genJetsSoftDropMatch = 'ak15GenJetsWithNuSoftDropMatch'
+
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
 process.deepntuplizer.isTrainSample = options.isTrainSample
 if not options.inputDataset:
@@ -145,4 +190,4 @@ if not options.inputDataset:
 #==============================================================================================================================#
 process.p = cms.Path(process.deepntuplizer)
 process.p.associate(patTask)
-
+process.p.associate(process.genJetTask)
