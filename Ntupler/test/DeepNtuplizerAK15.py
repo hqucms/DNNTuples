@@ -86,11 +86,7 @@ bTagDiscriminators = [
     'pfBoostedDoubleSecondaryVertexAK8BJetTags'
 ]
 
-subjetBTagDiscriminators = [
-    'pfCombinedInclusiveSecondaryVertexV2BJetTags',
-    'pfDeepCSVJetTags:probb',
-    'pfDeepCSVJetTags:probbb',
-]
+subjetBTagDiscriminators = ['None']
 
 JETCorrLevels = ['L2Relative', 'L3Absolute']
 

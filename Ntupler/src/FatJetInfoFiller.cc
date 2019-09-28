@@ -37,6 +37,11 @@ void FatJetInfoFiller::book() {
   data.add<int>("label_Top_bqq", 0);
   data.add<int>("label_Top_bc",  0);
   data.add<int>("label_Top_bq",  0);
+  data.add<int>("label_Top_bele",0);
+  data.add<int>("label_Top_bmu", 0);
+  data.add<int>("label_Top_btau",0);
+  data.add<int>("label_Top_bl",  0); // e, mu
+  data.add<int>("label_Top_blt", 0); // e, mu, tau (any)
 
   data.add<int>("label_W_cq",    0);
   data.add<int>("label_W_qq",    0);
@@ -59,7 +64,6 @@ void FatJetInfoFiller::book() {
   data.add<int>("sample_isQCD", 0);
 
   data.add<int>("sample_useReclusteredJets", useReclusteredJets_);
-  data.add<int>("sample_hasPuppiWeightedDaughters", 0);
 
 //  // legacy labels
 //  data.add<int>("fj_labelLegacy", 0);
@@ -74,6 +78,7 @@ void FatJetInfoFiller::book() {
   // gen-matched particle (top/W/etc.)
   data.add<float>("fj_gen_pt", 0);
   data.add<float>("fj_gen_eta", 0);
+  data.add<float>("fj_gen_deltaR", 999);
 
   // --- jet energy/mass regression ---
   data.add<float>("fj_genjet_pt", 0);
@@ -104,6 +109,7 @@ void FatJetInfoFiller::book() {
   // soft drop
   data.add<float>("fj_sdmass", 0);
   data.add<float>("fj_sdmass_fromsubjets", 0);
+  data.add<float>("fj_rho", 0);
   data.add<float>("fj_corrsdmass", 0);
 
   // subjets: soft drop gives up to 2 subjets
@@ -177,11 +183,9 @@ void FatJetInfoFiller::book() {
 
 bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
 
-  data.fill<int>("sample_hasPuppiWeightedDaughters", jet_helper.hasPuppiWeightedDaughters());
-
   // JMAR label
   {
-    auto jmar = fjmatch_.flavorJMAR(&jet, *genParticlesHandle, 0.6);
+    auto jmar = fjmatch_.flavorJMAR(&jet, *genParticlesHandle, 0.75*jetR_);
     data.fill<int>("fj_labelJMAR", jmar.first);
     data.fill<float>("fjJMAR_gen_pt", jmar.second ? jmar.second->pt() : -999);
     data.fill<float>("fjJMAR_gen_eta", jmar.second ? jmar.second->eta() : -999);
@@ -209,6 +213,11 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("label_Top_bqq", fjlabel.first == FatJetMatching::Top_bqq);
   data.fill<int>("label_Top_bc",  fjlabel.first == FatJetMatching::Top_bc);
   data.fill<int>("label_Top_bq",  fjlabel.first == FatJetMatching::Top_bq);
+  data.fill<int>("label_Top_bele",fjlabel.first == FatJetMatching::Top_bele);
+  data.fill<int>("label_Top_bmu", fjlabel.first == FatJetMatching::Top_bmu);
+  data.fill<int>("label_Top_btau",fjlabel.first == FatJetMatching::Top_btau);
+  data.fill<int>("label_Top_bl",  fjlabel.first == FatJetMatching::Top_bele || fjlabel.first == FatJetMatching::Top_bmu);
+  data.fill<int>("label_Top_blt", fjlabel.first == FatJetMatching::Top_bele || fjlabel.first == FatJetMatching::Top_bmu || fjlabel.first == FatJetMatching::Top_btau);
 
   data.fill<int>("label_W_cq",    fjlabel.first == FatJetMatching::W_cq);
   data.fill<int>("label_W_qq",    fjlabel.first == FatJetMatching::W_qq);
@@ -234,6 +243,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
   data.fill<float>("fj_gen_eta", fjlabel.second ? fjlabel.second->eta() : -999);
+  data.fill<float>("fj_gen_deltaR", fjlabel.second ? reco::deltaR(jet, fjlabel.second->p4()) : 999);
 
   // ----------------------------------
 
@@ -259,6 +269,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   auto msd_uncorr = jet.userFloat(name +"PFJetsPuppiSoftDropMass");
   data.fill<float>("fj_sdmass", msd_uncorr);
   data.fill<float>("fj_sdmass_fromsubjets", jet.groomedMass());
+  data.fill<float>("fj_rho", 2 * std::log(std::max(jet.groomedMass(), 0.01) / jet_helper.jet().pt())); // use corrected pt
 
   // subjets: soft drop gives up to 2 subjets
   const auto& subjets = jet_helper.getSubJets();

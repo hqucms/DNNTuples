@@ -38,9 +38,9 @@ private:
   virtual void endJob() override;
 
   double jetR = -1;
-  bool has_puppi_weighted_daughters_ = false;
 
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
+  edm::EDGetTokenT<edm::View<reco::Candidate>> candToken_;
   edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuMatchToken_;
   edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchToken_;
 
@@ -56,8 +56,8 @@ private:
 
 DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     jetR(iConfig.getParameter<double>("jetR")),
-    has_puppi_weighted_daughters_(iConfig.getParameter<bool>("hasPuppiWeightedDaughters")),
     jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
+    candToken_(consumes<edm::View<reco::Candidate>>(iConfig.getParameter<edm::InputTag>("pfcands"))),
     genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch"))),
     genJetWithNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsSoftDropMatch")))
 {
@@ -98,6 +98,9 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   edm::Handle<edm::View<pat::Jet>> jets;
   iEvent.getByToken(jetToken_, jets);
 
+  edm::Handle<edm::View<reco::Candidate>> candHandle;
+  iEvent.getByToken(candToken_, candHandle);
+
   edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuMatchHandle;
   iEvent.getByToken(genJetWithNuMatchToken_, genJetWithNuMatchHandle);
 
@@ -108,7 +111,7 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     bool write_ = true;
 
     const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
-    JetHelper jet_helper(&jet, has_puppi_weighted_daughters_);
+    JetHelper jet_helper(&jet, candHandle);
     jet_helper.setGenjetWithNu((*genJetWithNuMatchHandle)[jets->refAt(idx)]);
     jet_helper.setGenjetWithNuSoftDrop((*genJetWithNuSoftDropMatchHandle)[jets->refAt(idx)]);
 

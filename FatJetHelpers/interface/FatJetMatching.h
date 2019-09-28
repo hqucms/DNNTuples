@@ -48,7 +48,7 @@ public:
 
   enum FatJetLabel {
     Invalid=0,
-    Top_all=10, Top_bcq, Top_bqq, Top_bc, Top_bq,
+    Top_all=10, Top_bcq, Top_bqq, Top_bc, Top_bq, Top_bele, Top_bmu, Top_btau,
     W_all=20, W_cq, W_qq,
     Z_all=30, Z_bb, Z_cc, Z_qq,
     H_all=40, H_bb, H_cc, H_qqqq, H_tautau,
@@ -70,7 +70,7 @@ private:
   std::pair<FatJetLabel, const reco::GenParticle*> w_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
   std::pair<FatJetLabel, const reco::GenParticle*> z_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
   std::pair<FatJetLabel, const reco::GenParticle*> higgs_label(const pat::Jet *jet, const reco::GenParticle *parton, double distR);
-  std::pair<FatJetLabel, const reco::GenParticle*> qcd_label(const pat::Jet *jet);
+  std::pair<FatJetLabel, const reco::GenParticle*> qcd_label(const pat::Jet *jet, const reco::GenParticleCollection& genParticles, double distR);
 
 
 private:

@@ -217,7 +217,7 @@ std::pair<FatJetMatching::FatJetLabel, const reco::GenParticle*> FatJetMatching:
   if (genParticles.size() != processed_.size())
     throw std::logic_error("[FatJetMatching::flavor] Not all genParticles are processed!");
 
-  return qcd_label(jet);
+  return qcd_label(jet, genParticles, distR);
 
 }
 
@@ -367,6 +367,47 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
       }else{
         // test for W if dr(b, jet) > distR
         return w_label(jet, w_from_top, distR);
+      }
+    }
+  } else {
+    // leptonic W
+    if (debug_){
+      using namespace std;
+      cout << "jet: " << jet->polarP4() << endl;
+      cout << "top: "; printGenParticleInfo(top, -1);
+      cout << "b:   "; printGenParticleInfo(b_from_top, -1);
+      cout << "W:   "; printGenParticleInfo(w_from_top, -1);
+    }
+
+    const reco::GenParticle* lep = nullptr;
+    for (unsigned i=0; i<w_from_top->numberOfDaughters(); ++i){
+      const auto *dau = dynamic_cast<const reco::GenParticle*>(w_from_top->daughter(i));
+      auto pdgid = std::abs(dau->pdgId());
+      if (pdgid == ParticleID::p_eminus || pdgid == ParticleID::p_muminus || pdgid == ParticleID::p_tauminus){
+        // use final version here!
+        lep = getFinal(dau); break;
+      }
+    }
+
+    if (!lep) throw std::logic_error("[FatJetMatching::top_label] Cannot find charged lepton from leptonic W decay!");
+
+    double dr_b     = reco::deltaR(jet->p4(), b_from_top->p4());
+    double dr_l     = reco::deltaR(jet->p4(), lep->p4());
+    if (debug_){
+      using namespace std;
+      cout << "deltaR(jet, b)     : " << dr_b << endl;
+      cout << "deltaR(jet, l)     : " << dr_l << endl;
+      cout << "pdgid(l)           : " << lep->pdgId() << endl;
+    }
+
+    if (dr_b < distR && dr_l < distR){
+      auto pdgid = std::abs(lep->pdgId());
+      if (pdgid == ParticleID::p_eminus){
+        return std::make_pair(FatJetLabel::Top_bele, top);
+      } else if (pdgid == ParticleID::p_muminus){
+        return std::make_pair(FatJetLabel::Top_bmu, top);
+      } else if (pdgid == ParticleID::p_tauminus){
+        return std::make_pair(FatJetLabel::Top_btau, top);
       }
     }
   }
@@ -577,6 +618,7 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
     }
     if (taus.size() == 2){
       // higgs -> tautau
+      // use first version or last version of the tau in dr?
       double dr_tau1    = reco::deltaR(jet->p4(), taus.at(0)->p4());
       double dr_tau2    = reco::deltaR(jet->p4(), taus.at(1)->p4());
 
@@ -610,20 +652,41 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
 
 }
 
-std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::qcd_label(const pat::Jet* jet)
+std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::qcd_label(const pat::Jet* jet, const reco::GenParticleCollection& genParticles, double distR)
 {
+
+  const reco::GenParticle *parton = nullptr;
+  double minDR = 999;
+  for (const auto &gp : genParticles){
+    if (gp.status() != 23) continue;
+    auto pdgid = std::abs(gp.pdgId());
+    if (!(pdgid<ParticleID::p_t || pdgid==ParticleID::p_g)) continue;
+    auto dr = reco::deltaR(gp, *jet);
+    if (dr<distR && dr<minDR){
+      minDR = dr;
+      parton = &gp;
+    }
+  }
+  if (debug_){
+    using namespace std;
+    if (parton){
+      cout << "parton"; printGenParticleInfo(parton, -1);
+      cout << "dr(jet, parton): " << minDR << endl;
+    }
+  }
+
   auto n_bHadrons = jet->jetFlavourInfo().getbHadrons().size();
   auto n_cHadrons = jet->jetFlavourInfo().getcHadrons().size();
 
   if (n_bHadrons>=2) {
-    return std::make_pair(FatJetLabel::QCD_bb, nullptr);
+    return std::make_pair(FatJetLabel::QCD_bb, parton);
   }else if (n_bHadrons==1){
-    return std::make_pair(FatJetLabel::QCD_b, nullptr);
+    return std::make_pair(FatJetLabel::QCD_b, parton);
   }else if (n_cHadrons>=2){
-    return std::make_pair(FatJetLabel::QCD_cc, nullptr);
+    return std::make_pair(FatJetLabel::QCD_cc, parton);
   }else if (n_cHadrons==1){
-    return std::make_pair(FatJetLabel::QCD_c, nullptr);
+    return std::make_pair(FatJetLabel::QCD_c, parton);
   }
 
-  return std::make_pair(FatJetLabel::QCD_others, nullptr);
+  return std::make_pair(FatJetLabel::QCD_others, parton);
 }

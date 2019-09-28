@@ -31,22 +31,38 @@ void PFCompleteFiller::book() {
   // basic kinematics
   data.addMulti<float>("pfcand_ptrel");
   data.addMulti<float>("pfcand_erel");
+  data.addMulti<float>("pfcand_pt");
+  data.addMulti<float>("pfcand_mass");
+  data.addMulti<float>("pfcand_ptrel_log");
+  data.addMulti<float>("pfcand_erel_log");
+  data.addMulti<float>("pfcand_pt_log");
+  data.addMulti<float>("pfcand_e_log");
+
+  // no puppi scaled
+  data.addMulti<float>("pfcand_ptrel_nopuppi");
+  data.addMulti<float>("pfcand_erel_nopuppi");
+  data.addMulti<float>("pfcand_pt_nopuppi");
+  data.addMulti<float>("pfcand_mass_nopuppi");
+  data.addMulti<float>("pfcand_ptrel_log_nopuppi");
+  data.addMulti<float>("pfcand_erel_log_nopuppi");
+  data.addMulti<float>("pfcand_pt_log_nopuppi");
+  data.addMulti<float>("pfcand_e_log_nopuppi");
+
+
   data.addMulti<float>("pfcand_phirel");
   data.addMulti<float>("pfcand_etarel");
   data.addMulti<float>("pfcand_deltaR");
   data.addMulti<float>("pfcand_puppiw");
-  data.addMulti<float>("pfcand_pt");
   data.addMulti<float>("pfcand_abseta");
-  data.addMulti<float>("pfcand_mass");
-
-  data.addMulti<float>("pfcand_ptrel_log");
-  data.addMulti<float>("pfcand_erel_log");
-  data.addMulti<float>("pfcand_pt_log");
 
   data.addMulti<float>("pfcand_drminsv");
-  data.addMulti<float>("pfcand_drminsvin");
-  data.addMulti<float>("pfcand_drsubjet1");
-  data.addMulti<float>("pfcand_drsubjet2");
+  data.addMulti<float>("pfcand_drminsvin"); // restricted to within the jet cone
+  data.addMulti<float>("pfcand_drsubjet1"); // deprecated
+  data.addMulti<float>("pfcand_drsubjet2"); // deprecated
+
+  // use uncorrected pT to order the two subjets
+  data.addMulti<float>("pfcand_dr_uncorrsj1");
+  data.addMulti<float>("pfcand_dr_uncorrsj2");
 
   data.addMulti<float>("pfcand_charge");
   data.addMulti<float>("pfcand_isMu");
@@ -57,6 +73,7 @@ void PFCompleteFiller::book() {
 
   // for neutral
   data.addMulti<float>("pfcand_hcalFrac");
+  data.addMulti<float>("pfcand_hcalFracCalib");
 
   // for charged
   data.addMulti<float>("pfcand_VTX_ass");
@@ -104,82 +121,102 @@ void PFCompleteFiller::book() {
 
 bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
 
-  std::vector<const pat::PackedCandidate*> pfCands;
-  std::unordered_map<const pat::PackedCandidate*, TrackInfoBuilder> trackInfoMap;
-  for (const auto * cand : jet_helper.getJetConstituents()){
-    pfCands.push_back(cand);
-    // build track info map
-    trackInfoMap[cand];
-    trackInfoMap[cand].buildTrackInfo(builder_, *cand, jet, vertices->at(0));
-  }
+  const auto& pfCands = jet_helper.getJetConstituents();
 
-  // sort -- default is by pt
   data.fill<int>("n_pfcands", pfCands.size());
   data.fill<float>("npfcands", pfCands.size());
 
   float etasign = jet.eta()>0 ? 1 : -1;
 
-  for (const auto *cand : pfCands){
+  for (const auto& cand : pfCands){
 
-    auto puppiP4 = cand->p4();
-
-    // for jets stored in MiniAOD, need to rescale p4 by the puppi weight
-    if (!jet_helper.hasPuppiWeightedDaughters()) puppiP4 *= cand->puppiWeight();
+    const auto *packed_cand = dynamic_cast<const pat::PackedCandidate *>(&(*cand));
 
     // basic kinematics, valid for both charged and neutral
-    data.fillMulti<float>("pfcand_pt", puppiP4.pt());
-    data.fillMulti<float>("pfcand_ptrel", puppiP4.pt()/jet.pt());
-    data.fillMulti<float>("pfcand_erel", puppiP4.energy()/jet.energy());
-    data.fillMulti<float>("pfcand_phirel", reco::deltaPhi(puppiP4, jet));
-    data.fillMulti<float>("pfcand_etarel", etasign * (puppiP4.eta() - jet.eta()));
-    data.fillMulti<float>("pfcand_deltaR", reco::deltaR(puppiP4, jet));
-    data.fillMulti<float>("pfcand_abseta", std::abs(puppiP4.eta()));
-    data.fillMulti<float>("pfcand_mass", puppiP4.mass());
+    {
+      // puppi weighted
+      auto puppiP4 = jet_helper.getPuppiWeight(cand) * cand->p4();
+      data.fillMulti<float>("pfcand_ptrel", puppiP4.pt()/jet.pt());
+      data.fillMulti<float>("pfcand_erel", puppiP4.energy()/jet.energy());
+      data.fillMulti<float>("pfcand_pt", puppiP4.pt());
+      data.fillMulti<float>("pfcand_mass", puppiP4.mass());
+      data.fillMulti<float>("pfcand_ptrel_log", catchInfs(std::log(puppiP4.pt()/jet.pt()), -99));
+      data.fillMulti<float>("pfcand_erel_log", catchInfs(std::log(puppiP4.energy()/jet.energy()), -99));
+      data.fillMulti<float>("pfcand_pt_log", catchInfs(std::log(puppiP4.pt()), -99));
+      data.fillMulti<float>("pfcand_e_log", catchInfs(std::log(puppiP4.energy()), -99));
+    }
 
-    data.fillMulti<float>("pfcand_ptrel_log", catchInfs(std::log(puppiP4.pt()/jet.pt()), -99));
-    data.fillMulti<float>("pfcand_erel_log", catchInfs(std::log(puppiP4.energy()/jet.energy()), -99));
-    data.fillMulti<float>("pfcand_pt_log", catchInfs(std::log(puppiP4.pt()), -99));
+    // not puppi weighted
+    data.fillMulti<float>("pfcand_ptrel_nopuppi", packed_cand->pt()/jet.pt());
+    data.fillMulti<float>("pfcand_erel_nopuppi", packed_cand->energy()/jet.energy());
+    data.fillMulti<float>("pfcand_pt_nopuppi", packed_cand->pt());
+    data.fillMulti<float>("pfcand_mass_nopuppi", packed_cand->mass());
+    data.fillMulti<float>("pfcand_ptrel_log_nopuppi", catchInfs(std::log(packed_cand->pt()/jet.pt()), -99));
+    data.fillMulti<float>("pfcand_erel_log_nopuppi", catchInfs(std::log(packed_cand->energy()/jet.energy()), -99));
+    data.fillMulti<float>("pfcand_pt_log_nopuppi", catchInfs(std::log(packed_cand->pt()), -99));
+    data.fillMulti<float>("pfcand_e_log_nopuppi", catchInfs(std::log(packed_cand->energy()), -99));
 
-    data.fillMulti<float>("pfcand_puppiw", cand->puppiWeight());
+    data.fillMulti<float>("pfcand_phirel", reco::deltaPhi(*packed_cand, jet));
+    data.fillMulti<float>("pfcand_etarel", etasign * (packed_cand->eta() - jet.eta()));
+    data.fillMulti<float>("pfcand_deltaR", reco::deltaR(*packed_cand, jet));
+    data.fillMulti<float>("pfcand_abseta", std::abs(packed_cand->eta()));
+
+    data.fillMulti<float>("pfcand_puppiw", jet_helper.getPuppiWeight(cand));
 
     double minDR = 999;
     double minDRin = 2.*jetR_;
     for (const auto &sv : *SVs){
-      double dr = reco::deltaR(*cand, sv);
+      double dr = reco::deltaR(*packed_cand, sv);
       if (dr < minDR) minDR = dr;
       if (dr < minDRin && reco::deltaR(jet, sv) < jetR_) minDRin = dr;
     }
     data.fillMulti<float>("pfcand_drminsv", minDR==999 ? -1 : minDR);
     data.fillMulti<float>("pfcand_drminsvin", minDRin);
 
-    const auto& subjets = jet_helper.getSubJets();
-    data.fillMulti<float>("pfcand_drsubjet1", subjets.size()>0 ? reco::deltaR(*cand, *subjets.at(0)) : -1);
-    data.fillMulti<float>("pfcand_drsubjet2", subjets.size()>1 ? reco::deltaR(*cand, *subjets.at(1)) : -1);
+    { // deprecated
+      const auto& subjets = jet_helper.getSubJets();
+      data.fillMulti<float>("pfcand_drsubjet1", subjets.size()>0 ? reco::deltaR(*packed_cand, *subjets.at(0)) : -1);
+      data.fillMulti<float>("pfcand_drsubjet2", subjets.size()>1 ? reco::deltaR(*packed_cand, *subjets.at(1)) : -1);
+    }
 
-    data.fillMulti<float>("pfcand_charge", cand->charge());
-    data.fillMulti<float>("pfcand_isEl", std::abs(cand->pdgId())==11);
-    data.fillMulti<float>("pfcand_isMu", std::abs(cand->pdgId())==13);
-    data.fillMulti<float>("pfcand_isChargedHad", std::abs(cand->pdgId())==211);
-    data.fillMulti<float>("pfcand_isGamma", std::abs(cand->pdgId())==22);
-    data.fillMulti<float>("pfcand_isNeutralHad", std::abs(cand->pdgId())==130);
+    // use uncorrected pT to order the two subjets
+    {
+      const auto& subjets = jet_helper.getUncorrSubJets();
+      data.fillMulti<float>("pfcand_dr_uncorrsj1", subjets.size()>0 ? reco::deltaR(*packed_cand, *subjets.at(0)) : -1);
+      data.fillMulti<float>("pfcand_dr_uncorrsj2", subjets.size()>1 ? reco::deltaR(*packed_cand, *subjets.at(1)) : -1);
+    }
+
+    data.fillMulti<float>("pfcand_charge", packed_cand->charge());
+    data.fillMulti<float>("pfcand_isEl", std::abs(packed_cand->pdgId())==11);
+    data.fillMulti<float>("pfcand_isMu", std::abs(packed_cand->pdgId())==13);
+    data.fillMulti<float>("pfcand_isChargedHad", std::abs(packed_cand->pdgId())==211);
+    data.fillMulti<float>("pfcand_isGamma", std::abs(packed_cand->pdgId())==22);
+    data.fillMulti<float>("pfcand_isNeutralHad", std::abs(packed_cand->pdgId())==130);
 
     // for neutral
-    data.fillMulti<float>("pfcand_hcalFrac", cand->hcalFraction());
+    float hcal_fraction = 0.;
+    if (packed_cand->pdgId() == 1 || packed_cand->pdgId() == 130) {
+      hcal_fraction = packed_cand->hcalFraction();
+    } else if (packed_cand->isIsolatedChargedHadron()) {
+      hcal_fraction = packed_cand->rawHcalFraction();
+    }
+    data.fillMulti<float>("pfcand_hcalFrac", hcal_fraction);
+    data.fillMulti<float>("pfcand_hcalFracCalib", packed_cand->hcalFraction());
 
     // for charged
-    data.fillMulti<float>("pfcand_VTX_ass", cand->pvAssociationQuality());
-    data.fillMulti<float>("pfcand_fromPV", cand->fromPV());
-    data.fillMulti<float>("pfcand_lostInnerHits", cand->lostInnerHits());
-    data.fillMulti<float>("pfcand_trackHighPurity", cand->trackHighPurity());
+    data.fillMulti<float>("pfcand_VTX_ass", packed_cand->pvAssociationQuality());
+    data.fillMulti<float>("pfcand_fromPV", packed_cand->fromPV());
+    data.fillMulti<float>("pfcand_lostInnerHits", packed_cand->lostInnerHits());
+    data.fillMulti<float>("pfcand_trackHighPurity", packed_cand->trackHighPurity());
 
     // impact parameters
-    data.fillMulti<float>("pfcand_dz", catchInfs(cand->dz()));
-    data.fillMulti<float>("pfcand_dzsig", cand->bestTrack() ? catchInfs(cand->dz()/cand->dzError()) : 0);
-    data.fillMulti<float>("pfcand_dxy", catchInfs(cand->dxy()));
-    data.fillMulti<float>("pfcand_dxysig", cand->bestTrack() ? catchInfs(cand->dxy()/cand->dxyError()) : 0);
+    data.fillMulti<float>("pfcand_dz", catchInfs(packed_cand->dz()));
+    data.fillMulti<float>("pfcand_dzsig", packed_cand->bestTrack() ? catchInfs(packed_cand->dz()/packed_cand->dzError()) : 0);
+    data.fillMulti<float>("pfcand_dxy", catchInfs(packed_cand->dxy()));
+    data.fillMulti<float>("pfcand_dxysig", packed_cand->bestTrack() ? catchInfs(packed_cand->dxy()/packed_cand->dxyError()) : 0);
 
-    if (cand->bestTrack()){
-      const auto *trk = cand->bestTrack();
+    if (packed_cand->bestTrack()){
+      const auto *trk = packed_cand->bestTrack();
       data.fillMulti<float>("pfcand_normchi2", catchInfs(trk->normalizedChi2()));
       data.fillMulti<float>("pfcand_quality", trk->qualityMask());
 
@@ -209,7 +246,10 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
       data.fillMulti<float>("pfcand_dlambdadz", 0);
     }
 
-    const auto &trkinfo = trackInfoMap.at(cand);
+    // build track info map
+    TrackInfoBuilder trkinfo;
+    trkinfo.buildTrackInfo(builder_, *packed_cand, jet, vertices->at(0));
+
     data.fillMulti<float>("pfcand_btagMomentum", trkinfo.getTrackMomentum());
     data.fillMulti<float>("pfcand_btagEta", trkinfo.getTrackEta());
     data.fillMulti<float>("pfcand_btagEtaRel", trkinfo.getTrackEtaRel());

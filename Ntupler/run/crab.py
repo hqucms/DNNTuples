@@ -75,6 +75,7 @@ def createConfig(args, dataset):
     config.JobType.psetName = args.pset
     config.JobType.sendExternalFolder = args.send_external
     config.JobType.numCores = args.num_cores
+    config.JobType.allowUndistributedCMSSW = True
     config.JobType.maxMemoryMB = args.max_memory
     if args.set_input_dataset:
         config.JobType.pyCfgParams = ['inputDataset=%s' % dataset]

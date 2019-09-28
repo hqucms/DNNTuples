@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 deepntuplizer = cms.EDAnalyzer('DeepNtuplizer',
+                                pfcands    = cms.InputTag("packedPFCandidates"),
                                 vertices   = cms.InputTag("offlineSlimmedPrimaryVertices"),
                                 puInfo     = cms.InputTag("slimmedAddPileupInfo"),
                                 rhoInfo    = cms.InputTag("fixedGridRhoFastjetAll"),

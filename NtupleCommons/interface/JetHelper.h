@@ -12,12 +12,14 @@
 #include "DataFormats/PatCandidates/interface/Jet.h"
 #include "DataFormats/PatCandidates/interface/PackedCandidate.h"
 
+#include <map>
+
 namespace deepntuples {
 
 class JetHelper {
 public:
   JetHelper() {}
-  JetHelper(const pat::Jet *jet, bool has_puppi_weighted_daughters);
+  JetHelper(const pat::Jet *jet, const edm::Handle<reco::CandidateView> &pfcands);
 
   virtual ~JetHelper() {}
 
@@ -27,12 +29,19 @@ public:
   // ------
 
   // return jet constituents (PF candidates)
-  const std::vector<const pat::PackedCandidate*>& getJetConstituents() const { return daughters_; }
+  const std::vector<reco::CandidatePtr>& getJetConstituents() const { return daughters_; }
   unsigned int numberOfDaughters() const { return daughters_.size(); }
-  bool hasPuppiWeightedDaughters() const { return has_puppi_weighted_daughters_; }
+  float getPuppiWeight(const reco::CandidatePtr &cand) const {
+    auto iter = puppi_wgt_cache_.find(cand.key());
+    if (iter == puppi_wgt_cache_.end()){
+      throw cms::Exception("[JetHelper::getPuppiWeight] Cannot get puppi wgt!");
+    }
+    return iter->second;
+  }
 
   const pat::Jet& jet() const { return *jet_; }
   const std::vector<const pat::Jet*>& getSubJets() const { return subjets_; }
+  const std::vector<const pat::Jet*>& getUncorrSubJets() const { return uncorr_subjets_; }
 
   const reco::GenJet* genjetWithNu() const { return genjetWithNu_; }
   const reco::GenJet* genjetWithNuSoftDrop() const { return genjetWithNuSoftDrop_; }
@@ -41,17 +50,18 @@ public:
 
 
 private:
-  void initializeConstituents();
+  void initializeConstituents(const edm::Handle<reco::CandidateView> &pfcands);
 
 
 private:
   // data members
   const pat::Jet *jet_ = nullptr;
-  bool has_puppi_weighted_daughters_ = false;
   const reco::GenJet *genjetWithNu_ = nullptr;
   const reco::GenJet *genjetWithNuSoftDrop_ = nullptr;
   std::vector<const pat::Jet*> subjets_;
-  std::vector<const pat::PackedCandidate*> daughters_;
+  std::vector<const pat::Jet*> uncorr_subjets_;
+  std::vector<reco::CandidatePtr> daughters_;
+  std::map<reco::CandidatePtr::key_type, float> puppi_wgt_cache_;
 
 };
 

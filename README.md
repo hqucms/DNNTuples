@@ -2,13 +2,18 @@
 
 ## Setup
 ```
-# Needs >=CMSSW_10_2_15
-cmsrel CMSSW_10_2_15
-cd CMSSW_10_2_15/src
+cmsrel CMSSW_11_0_0_pre9
+cd CMSSW_11_0_0_pre9/src
 cmsenv
 
+
+# add PR: https://github.com/cms-sw/cmssw/pull/28035
+git cms-addpkg CommonTools/PileupAlgos
+git cherry-pick fc452b10088d484e0ee133c4d558bd73e024ee7f
+
+
 # clone this repo into "DeepNTuples" directory
-git clone https://github.com/hqucms/DNNTuplesAK8.git DeepNTuples -b 102X
+git clone ssh://git@gitlab.cern.ch:7999/hqu/DNNTuplesAK8.git DeepNTuples -b dev/11_0_X
 scram b -j24
 ```
 

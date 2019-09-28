@@ -92,11 +92,7 @@ bTagDiscriminators = [
     'pfMassIndependentDeepDoubleCvBJetTags:probHcc',
 ]
 
-subjetBTagDiscriminators = [
-    'pfCombinedInclusiveSecondaryVertexV2BJetTags',
-    'pfDeepCSVJetTags:probb',
-    'pfDeepCSVJetTags:probbb',
-]
+subjetBTagDiscriminators = ['None']
 
 if useReclusteredJets:
     JETCorrLevels = ['L2Relative', 'L3Absolute']

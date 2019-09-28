@@ -9,46 +9,62 @@
 
 namespace deepntuples {
 
-JetHelper::JetHelper(const pat::Jet* jet, bool has_puppi_weighted_daughters) : jet_(jet), has_puppi_weighted_daughters_(has_puppi_weighted_daughters) {
+JetHelper::JetHelper(const pat::Jet* jet, const edm::Handle<reco::CandidateView> &pfcands) : jet_(jet) {
   if (!jet) throw cms::Exception("[JetHelper::JetHelper] Null pointer for input jet!");
   if (jet->nSubjetCollections() == 0) throw cms::Exception("[JetHelper::JetHelper] No subjet collection for input jet!");
-  initializeConstituents();
+  initializeConstituents(pfcands);
 }
 
-void JetHelper::initializeConstituents() {
+void JetHelper::initializeConstituents(const edm::Handle<reco::CandidateView> &pfcands) {
+  subjets_.clear();
+  uncorr_subjets_.clear();
+  daughters_.clear();
+  puppi_wgt_cache_.clear();
+
   // get subjets
   auto subjets = jet_->subjets();
   for (const auto &sj : subjets){
     subjets_.push_back(&(*sj));
+    uncorr_subjets_.push_back(&(*sj));
   }
   // sort subjets by pt
   std::sort(subjets_.begin(), subjets_.end(),
       [](const pat::Jet* p1, const pat::Jet* p2){return p1->pt()>p2->pt();});
 
+  std::sort(uncorr_subjets_.begin(), uncorr_subjets_.end(),
+      [](const pat::Jet* p1, const pat::Jet* p2){return p1->correctedP4("Uncorrected").pt()>p2->correctedP4("Uncorrected").pt();});
+
   // get all consitituents
   for (unsigned idau=0; idau<jet_->numberOfDaughters(); ++idau){
-    const auto *dau = jet_->daughter(idau);
-    if (dau->numberOfDaughters()>0){
-      // is a subjet; add all daughters
-      for (unsigned k=0; k<dau->numberOfDaughters(); ++k){
-        const auto *cand = dynamic_cast<const pat::PackedCandidate*>(dau->daughter(k));
+    auto dauPtr = jet_->daughterPtr(idau);
+    if (dauPtr->numberOfDaughters()>0){
+      // is a subjet
+      const auto *sj = dynamic_cast<const pat::Jet*>(&(*dauPtr));
+      if (!sj) throw cms::Exception("[JetHelper::initializeConstituents] Cannot convert to subjet!");
+      // add all daughters
+      for (unsigned k=0; k<sj->numberOfDaughters(); ++k){
+        const auto& candPtr = sj->daughterPtr(k);
+        const auto *cand = dynamic_cast<const pat::PackedCandidate*>(&(*candPtr));
         if (cand->puppiWeight() < 0.01) continue; // [94X] ignore particles w/ extremely low puppi weights
-        daughters_.push_back(cand);
+        // Here we get the original PackedCandidate as stored in MiniAOD (i.e., not puppi weighted)
+        // https://github.com/cms-sw/cmssw/pull/28035
+        daughters_.push_back(pfcands->ptrAt(dauPtr.key()));
+        // For the Puppi weight, we get it from the new candidate in case it is recomputed
+        puppi_wgt_cache_[dauPtr.key()] = cand->puppiWeight();
       }
     }else{
-      const auto *cand = dynamic_cast<const pat::PackedCandidate*>(dau);
+      const auto& candPtr = dauPtr;
+      const auto *cand = dynamic_cast<const pat::PackedCandidate*>(&(*candPtr));
       if (cand->puppiWeight() < 0.01) continue; // [94X] ignore particles w/ extremely low puppi weights
-      daughters_.push_back(cand);
+      // Here we get the original PackedCandidate as stored in MiniAOD (i.e., not puppi weighted)
+      // https://github.com/cms-sw/cmssw/pull/28035
+      daughters_.push_back(pfcands->ptrAt(dauPtr.key()));
+      // For the Puppi weight, we get it from the new candidate in case it is recomputed
+      puppi_wgt_cache_[dauPtr.key()] = cand->puppiWeight();
     }
   }
-  // sort by puppi weighted pt
-  if (has_puppi_weighted_daughters_){
-    std::sort(daughters_.begin(), daughters_.end(),
-        [](const pat::PackedCandidate* p1, const pat::PackedCandidate* p2){return p1->pt() > p2->pt();});
-  } else {
-    std::sort(daughters_.begin(), daughters_.end(),
-        [](const pat::PackedCandidate* p1, const pat::PackedCandidate* p2){return p1->puppiWeight()*p1->pt() > p2->puppiWeight()*p2->pt();});
-  }
+  // sort by original pt
+  std::sort(daughters_.begin(), daughters_.end(), [](const reco::CandidatePtr &a, const reco::CandidatePtr &b){ return a->pt() > b->pt(); });
 
 }
 
