@@ -52,6 +52,7 @@ void FatJetInfoFiller::book() {
 
   data.add<int>("label_H_bb",    0);
   data.add<int>("label_H_cc",    0);
+  data.add<int>("label_H_qq",    0);
   data.add<int>("label_H_qqqq",  0);
   data.add<int>("label_H_tautau",0);
 
@@ -228,6 +229,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
   data.fill<int>("label_H_bb",    fjlabel.first == FatJetMatching::H_bb);
   data.fill<int>("label_H_cc",    fjlabel.first == FatJetMatching::H_cc);
+  data.fill<int>("label_H_qq",    fjlabel.first == FatJetMatching::H_qq);
   data.fill<int>("label_H_qqqq",  fjlabel.first == FatJetMatching::H_qqqq);
   data.fill<int>("label_H_tautau",fjlabel.first == FatJetMatching::H_tautau);
 

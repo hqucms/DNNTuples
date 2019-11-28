@@ -604,6 +604,8 @@ std::pair<FatJetMatching::FatJetLabel,const reco::GenParticle*> FatJetMatching::
           return std::make_pair(FatJetLabel::H_bb, higgs);
         }else if (pdgid_q1 == ParticleID::p_c && pdgid_q2 == ParticleID::p_c) {
           return std::make_pair(FatJetLabel::H_cc, higgs);
+        }else {
+          return std::make_pair(FatJetLabel::H_qq, higgs);
         }
       }
     }

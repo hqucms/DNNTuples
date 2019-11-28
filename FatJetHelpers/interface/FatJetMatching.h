@@ -51,7 +51,7 @@ public:
     Top_all=10, Top_bcq, Top_bqq, Top_bc, Top_bq, Top_bele, Top_bmu, Top_btau,
     W_all=20, W_cq, W_qq,
     Z_all=30, Z_bb, Z_cc, Z_qq,
-    H_all=40, H_bb, H_cc, H_qqqq, H_tautau,
+    H_all=40, H_bb, H_cc, H_qq, H_qqqq, H_tautau,
     QCD_all=50, QCD_bb, QCD_cc, QCD_b, QCD_c, QCD_others
   };
 
