@@ -4,6 +4,7 @@ from __future__ import print_function
 import argparse
 import subprocess
 import os
+import shutil
 import re
 import logging
 
@@ -49,11 +50,13 @@ def parseDatasetName(dataset):
                 keep_idx = idx
                 break
         rlt = re.search(r'_(v[0-9]+)(_ext[0-9]+|)(-v[0-9]+)', ver).groups()
-        ext = rlt[1].replace('_', '-')
-        vername = '_'.join(ver_pieces[:keep_idx]) + '_' + rlt[0] + rlt[2] + ext
+        ext = rlt[1].replace('_', '-') + rlt[2]
+        vername = '_'.join(ver_pieces[:keep_idx]) + '_' + rlt[0] + ext
         # hack
         if 'backup' in ver:
             ext += '_backup'
+        if 'new_pmx' in ver:
+            ext += '_new_pmx'
     else:
         vername = ver
         ext = '_' + ver
@@ -74,6 +77,7 @@ def createConfig(args, dataset):
     config.JobType.pluginName = 'Analysis'
     config.JobType.psetName = args.pset
     config.JobType.sendExternalFolder = args.send_external
+    config.JobType.allowUndistributedCMSSW = True
     config.JobType.numCores = args.num_cores
     config.JobType.maxMemoryMB = args.max_memory
     if args.set_input_dataset:
@@ -197,7 +201,12 @@ def status(args):
     for dirname in jobnames:
         logger.info('Checking status of job %s' % dirname)
         ret = runCrabCommand('status', dir='%s/%s' % (args.work_area, dirname))
-        states = _analyze_crab_status(ret)
+        try:
+            states = _analyze_crab_status(ret)
+        except:
+            logging.warning('Cannot get status for job %s' % dirname)
+            job_status[dirname] = '\033[1;31mUNKNOWN\033[0m'
+            continue
         try:
             percent_finished = 100.*states['finished'] / sum(states.values())
         except KeyError:
@@ -212,10 +221,19 @@ def status(args):
         if ret['status'] == 'COMPLETED':
             finished += 1
         elif ret['dbStatus'] == 'SUBMITFAILED':
-            submit_failed.append(ret['inputDataset'])
+            if not args.no_resubmit:
+                logger.info('Resubmitting submit-failed job %s.' % dirname)
+                shutil.rmtree('%s/%s' % (args.work_area, dirname))
+                cfgpath = os.path.join(args.work_area, 'configs', dirname.lstrip('crab_') + '.py')
+                cmd = 'crab submit -c {cfgpath}'.format(cfgpath=cfgpath)
+                p = subprocess.Popen(cmd, shell=True)
+                p.communicate()
+                if p.returncode != 0:
+                    submit_failed.append(ret['inputDataset'])
+
         elif states.get('failed', 0) > 0 and 'killed' not in ret['status'].lower() and not args.no_resubmit:
-                logger.info('Resubmitting job %s with options %s' % (dirname, str(kwargs)))
-                runCrabCommand('resubmit', dir='%s/%s' % (args.work_area, dirname), **kwargs)
+            logger.info('Resubmitting job %s with options %s' % (dirname, str(kwargs)))
+            runCrabCommand('resubmit', dir='%s/%s' % (args.work_area, dirname), **kwargs)
 
         if ret['publication'].get('failed', 0) > 0:
             logger.info('Resubmitting job %s for failed publication' % dirname)
@@ -331,6 +349,7 @@ def main():
         return
 
     submit_failed = []
+    request_names = {}
     with open(args.inputfile) as inputfile:
         for l in inputfile:
             l = l.strip()
@@ -338,6 +357,10 @@ def main():
                 continue
             dataset = [s for s in l.split() if '/MINIAOD' in s][0]
             cfg, cfgpath = createConfig(args, dataset)
+            if cfg.General.requestName in request_names:
+                request_names[cfg.General.requestName].append(dataset)
+            else:
+                request_names[cfg.General.requestName] = [dataset]
             if args.dryrun:
                 print('-' * 50)
                 print(cfg)
@@ -352,6 +375,9 @@ def main():
 
     if len(submit_failed):
         logger.warning('Submit failed:\n%s' % '\n'.join(submit_failed))
+    duplicate_names = {name:request_names[name] for name in request_names if len(request_names[name])>1}
+    if len(duplicate_names):
+        logger.warning('Dataset with the same request names:\n%s' % str(duplicate_names))
 
 
 if __name__ == '__main__':
