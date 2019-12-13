@@ -79,6 +79,7 @@ void FatJetInfoFiller::book() {
   // gen-matched particle (top/W/etc.)
   data.add<float>("fj_gen_pt", 0);
   data.add<float>("fj_gen_eta", 0);
+  data.add<float>("fj_gen_mass", 0);
   data.add<float>("fj_gen_deltaR", 999);
 
   // --- jet energy/mass regression ---
@@ -245,6 +246,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
   data.fill<float>("fj_gen_eta", fjlabel.second ? fjlabel.second->eta() : -999);
+  data.fill<float>("fj_gen_mass", (fjlabel.first < FatJetMatching::QCD_all && fjlabel.second) ? fjlabel.second->mass() : 0);
   data.fill<float>("fj_gen_deltaR", fjlabel.second ? reco::deltaR(jet, fjlabel.second->p4()) : 999);
 
   // ----------------------------------
