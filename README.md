@@ -2,19 +2,13 @@
 
 ## Setup
 ```
-cmsrel CMSSW_11_0_0_pre9
-cd CMSSW_11_0_0_pre9/src
+cmsrel CMSSW_11_0_0_pre13
+cd CMSSW_11_0_0_pre13/src
 cmsenv
 
-
-# add PR: https://github.com/cms-sw/cmssw/pull/28035
-git cms-addpkg CommonTools/PileupAlgos
-git cherry-pick fc452b10088d484e0ee133c4d558bd73e024ee7f
-
-
 # clone this repo into "DeepNTuples" directory
-git clone ssh://git@gitlab.cern.ch:7999/hqu/DNNTuplesAK8.git DeepNTuples -b dev/11_0_X
-scram b -j24
+git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/11_0_X
+scram b -j8
 ```
 
 ## Submit jobs via CRAB
