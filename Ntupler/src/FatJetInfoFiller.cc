@@ -91,9 +91,13 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_genOverReco_mass_null", 0); // default to 0 if not gen-matched
   data.add<float>("fj_genjet_sdmass", 0);
   data.add<float>("fj_genjet_sdmass_sqrt", 0);
+  data.add<float>("fj_genjet_targetmass", 0);
   data.add<float>("fj_genOverReco_sdmass", 1); // default to 1 if not gen-matched
   data.add<float>("fj_genOverReco_sdmass_null", 0); // default to 0 if not gen-matched
   // ----------------------------------
+
+  // --- target mass for energy regression ---
+  data.add<float>("fj_targetgenmass", 0);
 
   // fatjet kinematics
   data.add<float>("fj_pt", 0);
@@ -141,7 +145,6 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_ptDR", 0);
   data.add<float>("fj_relptdiff", 0);
   data.add<float>("fj_sdn2", 0);
-
 
   //double-b
   data.add<float>("fj_doubleb", 0);
@@ -246,7 +249,8 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   // gen-matched particle (top/W/etc.)
   data.fill<float>("fj_gen_pt", fjlabel.second ? fjlabel.second->pt() : -999);
   data.fill<float>("fj_gen_eta", fjlabel.second ? fjlabel.second->eta() : -999);
-  data.fill<float>("fj_gen_mass", (fjlabel.first < FatJetMatching::QCD_all && fjlabel.second) ? fjlabel.second->mass() : 0);
+  float gen_mass = (fjlabel.first < FatJetMatching::QCD_all && fjlabel.second) ? fjlabel.second->mass() : 0.;
+  data.fill<float>("fj_gen_mass", gen_mass);
   data.fill<float>("fj_gen_deltaR", fjlabel.second ? reco::deltaR(jet, fjlabel.second->p4()) : 999);
 
   // ----------------------------------
@@ -323,12 +327,12 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   if (sdgenjet){
     // jet here points to the uncorrected jet
     auto pos = [](double x){ return x<0 ? 0 : x; };
-    data.fill<float>("fj_genjet_sdmass", pos(sdgenjet->mass()));
+    data.fill<float>("fj_genjet_sdmass",  pos(sdgenjet->mass()));
+    data.fill<float>("fj_genjet_targetmass",(gen_mass > 6.) ? gen_mass : pos(sdgenjet->mass()) );
     data.fill<float>("fj_genjet_sdmass_sqrt", std::sqrt(pos(sdgenjet->mass())));
     data.fill<float>("fj_genOverReco_sdmass", catchInfs(pos(sdgenjet->mass()) / pos(msd_uncorr), 1));
     data.fill<float>("fj_genOverReco_sdmass_null", catchInfs(pos(sdgenjet->mass()) / pos(msd_uncorr), 0));
   }
-
 
   // --------
   // double-b
