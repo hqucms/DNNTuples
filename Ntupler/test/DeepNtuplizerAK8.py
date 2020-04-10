@@ -65,9 +65,7 @@ process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-# process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_mc', '')
-# process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_data', '')
-process.GlobalTag = GlobalTag(process.GlobalTag, '94X_mc2017_realistic_v17', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '102X_upgrade2018_realistic_v21', '')
 print 'Using global tag', process.GlobalTag.globaltag
 
 # ---------------------------------------------------------
@@ -98,10 +96,10 @@ if useReclusteredJets:
     JETCorrLevels = ['L2Relative', 'L3Absolute']
 
     from DeepNTuples.Ntupler.jetToolbox_cff import jetToolbox
-    jetToolbox(process, 'ak8', 'dummySeq', 'out', associateTask=False,
+    jetToolbox(process, 'ak8', 'dummySeq', 'noOutput',
                PUMethod='Puppi', JETCorrPayload='AK8PFPuppi', JETCorrLevels=JETCorrLevels,
                Cut='pt > 170.0 && abs(rapidity()) < 2.4',
-               miniAOD=True, runOnMC=True,
+               runOnMC=True,
                addNsub=True, maxTau=3,
                addSoftDrop=True, addSoftDropSubjets=True, subJETCorrPayload='AK4PFPuppi', subJETCorrLevels=JETCorrLevels,
                bTagDiscriminators=['pfCombinedInclusiveSecondaryVertexV2BJetTags'], subjetBTagDiscriminators=subjetBTagDiscriminators)
@@ -119,7 +117,6 @@ if useReclusteredJets:
     process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addBTagInfo = cms.bool(True)
 
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
-    hasPuppiWeightedDaughters = True
 else:
     updateJetCollection(
        process,
@@ -133,7 +130,6 @@ else:
     process.updatedPatJetsTransientCorrected.addBTagInfo = cms.bool(True)
 
     srcJets = cms.InputTag('selectedUpdatedPatJets')
-    hasPuppiWeightedDaughters = False
 # ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask, addToProcessAndTask
 patTask = getPatAlgosToolsTask(process)
@@ -184,7 +180,6 @@ process.genJetTask = cms.Task(
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.hasPuppiWeightedDaughters = hasPuppiWeightedDaughters
 process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll
 
 process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'

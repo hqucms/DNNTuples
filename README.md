@@ -2,12 +2,12 @@
 
 ## Setup
 ```
-cmsrel CMSSW_11_0_0_pre13
-cd CMSSW_11_0_0_pre13/src
+cmsrel CMSSW_11_1_0_pre5
+cd CMSSW_11_1_0_pre5/src
 cmsenv
 
 # clone this repo into "DeepNTuples" directory
-git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/11_0_X
+git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/11_1_X
 scram b -j8
 ```
 
