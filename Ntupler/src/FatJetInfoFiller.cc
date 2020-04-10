@@ -91,6 +91,7 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_genOverReco_mass_null", 0); // default to 0 if not gen-matched
   data.add<float>("fj_genjet_sdmass", 0);
   data.add<float>("fj_genjet_sdmass_sqrt", 0);
+  data.add<float>("fj_genjet_targetmass", 0);
   data.add<float>("fj_genOverReco_sdmass", 1); // default to 1 if not gen-matched
   data.add<float>("fj_genOverReco_sdmass_null", 0); // default to 0 if not gen-matched
   // ----------------------------------
@@ -325,6 +326,7 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     auto pos = [](double x){ return x<0 ? 0 : x; };
     data.fill<float>("fj_genjet_sdmass", pos(sdgenjet->mass()));
     data.fill<float>("fj_genjet_sdmass_sqrt", std::sqrt(pos(sdgenjet->mass())));
+    data.fill<float>("fj_genjet_targetmass", (fjlabel.first < FatJetMatching::QCD_all && fjlabel.second) ? fjlabel.second->mass() : pos(sdgenjet->mass()) );
     data.fill<float>("fj_genOverReco_sdmass", catchInfs(pos(sdgenjet->mass()) / pos(msd_uncorr), 1));
     data.fill<float>("fj_genOverReco_sdmass_null", catchInfs(pos(sdgenjet->mass()) / pos(msd_uncorr), 0));
   }
