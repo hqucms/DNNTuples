@@ -136,6 +136,8 @@ void DeepNtuplizer::beginJob() {
     throw edm::Exception( edm::errors::Configuration,
         "TFile Service is not registered in cfg file" );
   }
+  fs->file().SetCompressionAlgorithm(ROOT::kLZ4);
+  fs->file().SetCompressionLevel(4);
   treeWriter = new TreeWriter(fs->make<TTree>("tree" ,"tree"));
 
   for(auto *m : modules_)
