@@ -21,7 +21,7 @@ class JetInfoFiller: public NtupleBase {
 public:
   JetInfoFiller() : JetInfoFiller("") {}
   JetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), flavorDef(jetR),
-      jetIdTight(PFJetIDSelectionFunctor::WINTER17, PFJetIDSelectionFunctor::TIGHT) {}
+      jetIdTight(PFJetIDSelectionFunctor::SUMMER18PUPPI, PFJetIDSelectionFunctor::TIGHT) {}
   virtual ~JetInfoFiller() {}
 
   // get input parameters from the cfg file

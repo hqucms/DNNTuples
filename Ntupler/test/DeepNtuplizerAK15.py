@@ -159,7 +159,7 @@ process.genJetTask = cms.Task(
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll
+process.deepntuplizer.bDiscriminators = bTagDiscriminators
 process.deepntuplizer.jetR = jetR
 process.deepntuplizer.jetPtMin = 150
 
