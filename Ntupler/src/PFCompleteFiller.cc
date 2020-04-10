@@ -250,20 +250,20 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     TrackInfoBuilder trkinfo;
     trkinfo.buildTrackInfo(builder_, *packed_cand, jet, vertices->at(0));
 
-    data.fillMulti<float>("pfcand_btagMomentum", trkinfo.getTrackMomentum());
-    data.fillMulti<float>("pfcand_btagEta", trkinfo.getTrackEta());
-    data.fillMulti<float>("pfcand_btagEtaRel", trkinfo.getTrackEtaRel());
-    data.fillMulti<float>("pfcand_btagPtRel", trkinfo.getTrackPtRel());
-    data.fillMulti<float>("pfcand_btagPPar", trkinfo.getTrackPPar());
-    data.fillMulti<float>("pfcand_btagDeltaR", trkinfo.getTrackDeltaR());
-    data.fillMulti<float>("pfcand_btagPtRatio", trkinfo.getTrackPtRatio());
-    data.fillMulti<float>("pfcand_btagPParRatio", trkinfo.getTrackPParRatio());
-    data.fillMulti<float>("pfcand_btagSip2dVal", trkinfo.getTrackSip2dVal());
-    data.fillMulti<float>("pfcand_btagSip2dSig", trkinfo.getTrackSip2dSig());
-    data.fillMulti<float>("pfcand_btagSip3dVal", trkinfo.getTrackSip3dVal());
-    data.fillMulti<float>("pfcand_btagSip3dSig", trkinfo.getTrackSip3dSig());
-    data.fillMulti<float>("pfcand_btagJetDistVal", trkinfo.getTrackJetDistVal());
-    data.fillMulti<float>("pfcand_btagJetDistSig", trkinfo.getTrackJetDistSig());
+    data.fillMulti<float>("pfcand_btagMomentum", catchInfs(trkinfo.getTrackMomentum()));
+    data.fillMulti<float>("pfcand_btagEta", catchInfs(trkinfo.getTrackEta()));
+    data.fillMulti<float>("pfcand_btagEtaRel", catchInfs(trkinfo.getTrackEtaRel()));
+    data.fillMulti<float>("pfcand_btagPtRel", catchInfs(trkinfo.getTrackPtRel()));
+    data.fillMulti<float>("pfcand_btagPPar", catchInfs(trkinfo.getTrackPPar()));
+    data.fillMulti<float>("pfcand_btagDeltaR", catchInfs(trkinfo.getTrackDeltaR()));
+    data.fillMulti<float>("pfcand_btagPtRatio", catchInfs(trkinfo.getTrackPtRatio()));
+    data.fillMulti<float>("pfcand_btagPParRatio", catchInfs(trkinfo.getTrackPParRatio()));
+    data.fillMulti<float>("pfcand_btagSip2dVal", catchInfs(trkinfo.getTrackSip2dVal()));
+    data.fillMulti<float>("pfcand_btagSip2dSig", catchInfs(trkinfo.getTrackSip2dSig()));
+    data.fillMulti<float>("pfcand_btagSip3dVal", catchInfs(trkinfo.getTrackSip3dVal()));
+    data.fillMulti<float>("pfcand_btagSip3dSig", catchInfs(trkinfo.getTrackSip3dSig()));
+    data.fillMulti<float>("pfcand_btagJetDistVal", catchInfs(trkinfo.getTrackJetDistVal()));
+    data.fillMulti<float>("pfcand_btagJetDistSig", catchInfs(trkinfo.getTrackJetDistSig()));
 
 
   }
