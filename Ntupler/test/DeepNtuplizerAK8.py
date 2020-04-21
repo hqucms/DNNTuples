@@ -70,7 +70,7 @@ print 'Using global tag', process.GlobalTag.globaltag
 
 # ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
-from RecoBTag.MXNet.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
+from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
 
 useReclusteredJets = True
 jetR = 0.8
