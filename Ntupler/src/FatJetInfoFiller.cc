@@ -16,6 +16,9 @@ void FatJetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
   fjTagInfoName = iConfig.getParameter<std::string>("fjTagInfoName");
   useReclusteredJets_ = iConfig.getParameter<bool>("useReclusteredJets");
   isQCDSample_ = iConfig.getUntrackedParameter<bool>("isQCDSample", false);
+  sample_use_pythia_ = iConfig.getParameter<bool>("isPythia");
+  sample_use_herwig_ = iConfig.getParameter<bool>("isHerwig");
+  sample_use_madgraph_ = iConfig.getParameter<bool>("isMadGraph");
   isTrainSample_ = iConfig.getUntrackedParameter<bool>("isTrainSample", false);
   fjName = iConfig.getParameter<std::string>("jetType") + std::to_string(int(10*jetR_));
 }
@@ -63,6 +66,9 @@ void FatJetInfoFiller::book() {
   data.add<int>("label_QCD_others", 0);
 
   data.add<int>("sample_isQCD", 0);
+  data.add<int>("sample_use_pythia", 0);
+  data.add<int>("sample_use_herwig", 0);
+  data.add<int>("sample_use_madgraph", 0);
 
   data.add<int>("sample_useReclusteredJets", useReclusteredJets_);
 
@@ -242,6 +248,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("label_QCD_others", fjlabel.first == FatJetMatching::QCD_others);
 
   data.fill<int>("sample_isQCD",  isQCDSample_);
+  data.fill<int>("sample_use_pythia", sample_use_pythia_);
+  data.fill<int>("sample_use_herwig", sample_use_herwig_);
+  data.fill<int>("sample_use_madgraph", sample_use_madgraph_); // MG can be interfaced w/ either pythia or herwig
 
 
   // gen-matched particle (top/W/etc.)

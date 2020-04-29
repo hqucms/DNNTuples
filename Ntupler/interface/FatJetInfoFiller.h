@@ -41,6 +41,10 @@ private:
   bool isQCDSample_ = false;
   bool isTrainSample_ = false;
 
+  bool sample_use_pythia_ = false;
+  bool sample_use_herwig_ = false;
+  bool sample_use_madgraph_ = false;
+
   std::string fjTagInfoName;
   std::string fjName;
 

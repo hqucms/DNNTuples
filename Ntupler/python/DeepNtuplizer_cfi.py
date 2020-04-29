@@ -23,5 +23,8 @@ deepntuplizer = cms.EDAnalyzer('DeepNtuplizer',
                                 fjTagInfoName = cms.string('pfBoostedDoubleSVAK8'),
                                 bDiscriminators = cms.vstring(),
                                 isQCDSample   = cms.untracked.bool(False),
+                                isPythia      = cms.bool(False),
+                                isHerwig      = cms.bool(False),
+                                isMadGraph    = cms.bool(False),
                                 isTrainSample = cms.untracked.bool(True),
                                 )

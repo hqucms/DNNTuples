@@ -167,6 +167,10 @@ process.deepntuplizer.genJetsMatch = 'ak15GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak15GenJetsWithNuSoftDropMatch'
 
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
+process.deepntuplizer.isQCDPythia = 'pythia' in options.inputDataset.lower()
+process.deepntuplizer.isQCDHerwig = 'herwig' in options.inputDataset.lower()
+process.deepntuplizer.isQCDMadGraph = 'madgraph' in options.inputDataset.lower()  # note: MG can be interfaced w/ either pythia or herwig
+
 process.deepntuplizer.isTrainSample = options.isTrainSample
 if not options.inputDataset:
     # interactive running
