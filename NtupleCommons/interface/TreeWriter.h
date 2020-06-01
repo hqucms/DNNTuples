@@ -43,7 +43,7 @@ public :
     if(fRead){
       fTree->SetBranchAddress(name, &varv);
     }else{
-      fTree->Branch(name, &varv);
+      fTree->Branch(name, &varv, /*bufsize=32000*/1024000);
     }
   }
 

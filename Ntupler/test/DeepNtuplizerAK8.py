@@ -1,17 +1,14 @@
 import FWCore.ParameterSet.Config as cms
 
 # ---------------------------------------------------------
-
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
-options.inputFiles = '/store/mc/RunIIAutumn18MiniAOD/BulkGravitonToHHTo4Q_MX-600to6000_MH-15to250_part1_TuneCP5_13TeV-madgraph_pythia8/MINIAODSIM/multigridpack_102X_upgrade2018_realistic_v15-v1/280000/F3DA5412-2411-D548-9C93-653B4840B855.root'
+options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/BulkGravitonToHHTo4Q_MX-600to6000_MH-15to250_part2_TuneCP5_13TeV-madgraph_pythia8/MINIAODSIM/multigridpack_106X_mc2017_realistic_v6-v1/50000/FB46C2C2-73A4-A64C-A3D7-FC47C6A48871.root'
 options.maxEvents = -1
 
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
-options.register('job', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "job number")
-options.register('nJobs', 1, VarParsing.multiplicity.singleton, VarParsing.varType.int, "total jobs")
 options.register('inputDataset',
                  '',
                  VarParsing.multiplicity.singleton,
@@ -19,11 +16,19 @@ options.register('inputDataset',
                  "Input dataset")
 options.register('isTrainSample', True, VarParsing.multiplicity.singleton, VarParsing.varType.bool, "if the sample is used for training")
 
-options.setupTags(tag='%d', ifCond='nJobs > 1', tagArg='job')
 options.parseArguments()
 
-# ---------------------------------------------------------
+globalTagMap = {
+    'Summer19UL17': '106X_mc2017_realistic_v6',
+    'Summer19UL18': '106X_upgrade2018_realistic_v11_L1v1',
+    'Summer19UL16': '',
+}
 
+era = None if options.inputDataset else 'Summer19UL17'
+for k in globalTagMap:
+    if k in options.inputDataset:
+        era = k
+# ---------------------------------------------------------
 process = cms.Process("DNNFiller")
 
 process.load('FWCore.MessageService.MessageLogger_cfi')
@@ -45,19 +50,7 @@ process.source = cms.Source('PoolSource',
     fileNames=cms.untracked.vstring(options.inputFiles),
     skipEvents=cms.untracked.uint32(options.skipEvents)
 )
-
-
-numberOfFiles = len(process.source.fileNames)
-numberOfJobs = options.nJobs
-jobNumber = options.job
-
-process.source.fileNames = process.source.fileNames[jobNumber:numberOfFiles:numberOfJobs]
-if options.nJobs > 1:
-    print ("running over these files:")
-    print (process.source.fileNames)
-
 # ---------------------------------------------------------
-
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.load("Configuration.EventContent.EventContent_cff")
 process.load('Configuration.StandardSequences.Services_cff')
@@ -65,12 +58,41 @@ process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '102X_upgrade2018_realistic_v21', '')
-print 'Using global tag', process.GlobalTag.globaltag
-
+process.GlobalTag = GlobalTag(process.GlobalTag, globalTagMap[era], '')
+print('Using global tag', process.GlobalTag.globaltag)
+# ---------------------------------------------------------
+# read JEC from sqlite
+if era == 'Summer19UL17':
+    import os
+    jecTag = 'Summer19UL17_V5_MC'
+    jecFile = '%s.db' % jecTag
+    if not os.path.exists(jecFile):
+        os.symlink('../data/'+jecFile, jecFile)
+    from CondCore.CondDB.CondDB_cfi import CondDB
+    CondDBJECFile = CondDB.clone(connect = cms.string( 'sqlite:%s'%jecFile ) )
+    process.jec = cms.ESSource('PoolDBESSource',
+        CondDBJECFile,
+        toGet = cms.VPSet(
+            cms.PSet(
+                record = cms.string('JetCorrectionsRecord'),
+                tag    = cms.string('JetCorrectorParametersCollection_%s_AK4PFchs' % jecTag),
+                label  = cms.untracked.string('AK4PFchs')
+            ),
+            cms.PSet(
+                record = cms.string('JetCorrectionsRecord'),
+                tag    = cms.string('JetCorrectorParametersCollection_%s_AK4PFPuppi' % jecTag),
+                label  = cms.untracked.string('AK4PFPuppi')
+            ),
+            # ...and so on for all jet types you need
+        )
+    )
+    print(jecTag, process.jec.toGet)
+    # Add an ESPrefer to override JEC that might be available from the global tag
+    process.es_prefer_jec = cms.ESPrefer('PoolDBESSource', 'jec')
 # ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
+from RecoBTag.MXNet.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
 
 useReclusteredJets = True
 jetR = 0.8
@@ -82,12 +104,12 @@ bTagInfos = [
 bTagDiscriminators = [
     'pfCombinedInclusiveSecondaryVertexV2BJetTags',
     'pfBoostedDoubleSecondaryVertexAK8BJetTags',
-    'pfDeepDoubleBvLJetTags:probHbb',
-    'pfDeepDoubleCvLJetTags:probHcc',
-    'pfDeepDoubleCvBJetTags:probHcc',
-    'pfMassIndependentDeepDoubleBvLJetTags:probHbb',
-    'pfMassIndependentDeepDoubleCvLJetTags:probHcc',
-    'pfMassIndependentDeepDoubleCvBJetTags:probHcc',
+    # 'pfDeepDoubleBvLJetTags:probHbb',
+    # 'pfDeepDoubleCvLJetTags:probHcc',
+    # 'pfDeepDoubleCvBJetTags:probHcc',
+    # 'pfMassIndependentDeepDoubleBvLJetTags:probHbb',
+    # 'pfMassIndependentDeepDoubleCvLJetTags:probHcc',
+    # 'pfMassIndependentDeepDoubleCvBJetTags:probHcc',
 ]
 
 subjetBTagDiscriminators = ['None']
@@ -109,12 +131,28 @@ if useReclusteredJets:
        jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
        rParam=jetR,
        jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-       btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll,
+       btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll,
        btagInfos=bTagInfos,
        postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
     process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addTagInfos = cms.bool(True)
     process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addBTagInfo = cms.bool(True)
+
+    from RecoBTag.ONNXRuntime.pfDeepBoostedJetTags_cfi import pfDeepBoostedJetTags as _pfDeepBoostedJetTags
+    process.pfParticleNetJetTagsAK8WithPuppiDaughters = _pfDeepBoostedJetTags.clone(
+        src=process.pfParticleNetJetTagsAK8WithPuppiDaughters.src,
+        flav_names=process.pfParticleNetJetTagsAK8WithPuppiDaughters.flav_names,
+        preprocessParams=process.pfParticleNetJetTagsAK8WithPuppiDaughters.preprocessParams,
+        model_path='DeepNTuples/Ntupler/data/ParticleNet/ak8/ParticleNet.onnx',
+        )
+    process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters = _pfDeepBoostedJetTags.clone(
+        src=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.src,
+        flav_names=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.flav_names,
+        preprocessParams=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.preprocessParams,
+        model_path='DeepNTuples/Ntupler/data/ParticleNet-MD/ak8/ParticleNetMD.onnx',
+        )
+
+
 
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
 else:
@@ -180,7 +218,7 @@ process.genJetTask = cms.Task(
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
 process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll
+process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll
 
 process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
 process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'

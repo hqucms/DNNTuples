@@ -7,8 +7,7 @@ import os
 import shutil
 import re
 import logging
-
-from CRABAPI.RawCommand import crabCommand
+import CRABClient
 
 
 def configLogger(name, loglevel=logging.INFO):
@@ -36,7 +35,22 @@ def natural_sort(l):
     return sorted(l, key=alphanum_key)
 
 
+def _confirm(prompt, silent_mode=False):
+    if silent_mode:
+        return True
+    ans = raw_input('%s [yn] ' % prompt)
+    if ans.lower()[0] == 'y':
+        return True
+    else:
+        return False
+
+
 def runCrabCommand(command, *args, **kwargs):
+    if kwargs.get('dryrun'):
+        print(command)
+        return
+
+    from CRABAPI.RawCommand import crabCommand
     try:
         return crabCommand(command, *args, **kwargs)
     except Exception as e:
@@ -106,6 +120,30 @@ def getDatasetSiteInfo(dataset, retry=2):
             return on_fnal_disk, sites
 
 
+def loadConfig(work_area, task_name):
+    import os
+    import sys
+    import copy
+    from importlib import import_module
+    orig_path = copy.copy(sys.path)
+    cfgdir = os.path.join(work_area, 'configs')
+    sys.path.insert(0, cfgdir)
+    m = import_module(task_name.replace('crab_', ''))
+    config = m.config
+    sys.path = orig_path
+    return config
+
+
+def writeConfig(config, work_area):
+    cfgdir = os.path.join(work_area, 'configs')
+    if not os.path.exists(cfgdir):
+        os.makedirs(cfgdir)
+    cfgpath = os.path.join(cfgdir, config.General.requestName + '.py')
+    with open(cfgpath, 'w') as f:
+        f.write(str(config))
+    return cfgpath
+
+
 def createConfig(args, dataset):
     from CRABClient.UserUtilities import config
     config = config()
@@ -125,6 +163,8 @@ def createConfig(args, dataset):
     config.JobType.maxMemoryMB = args.max_memory
     if args.set_input_dataset:
         config.JobType.pyCfgParams = ['inputDataset=%s' % dataset]
+    if len(args.input_files) > 0:
+        config.JobType.inputFiles = args.input_files
 
     config.Data.inputDBS = 'global'
     config.Data.inputDataset = dataset
@@ -155,19 +195,46 @@ def createConfig(args, dataset):
     if args.allow_remote:
         on_fnal_disk, t2_sites = getDatasetSiteInfo(dataset)
         if on_fnal_disk and len(t2_sites) < 3:
-            config.General.requestName = config.General.requestName + '-remote'
+            config.General.requestName = config.General.requestName
             config.Data.ignoreLocality = True
             config.Site.whitelist = ['T2_US_*'] + t2_sites
 
     # write config file
-    cfgdir = os.path.join(args.work_area, 'configs')
+    cfgpath = writeConfig(config, args.work_area)
+    return config, cfgpath
+
+
+def calcLumiForRecovery(config, status_dict, work_area_rsb):
+    import ast
+    from CRABClient.UserUtilities import getLumiListInValidFiles
+    from WMCore.DataStructs.LumiList import LumiList
+
+    cfgdir = os.path.join(work_area_rsb, 'configs')
     if not os.path.exists(cfgdir):
         os.makedirs(cfgdir)
-    cfgpath = os.path.join(cfgdir, config.General.requestName + '.py')
-    with open(cfgpath, 'w') as f:
-        f.write(str(config))
 
-    return config, cfgpath
+    # get lumis of the input dataset
+    lumifile = getattr(config.Data, 'lumiMask', '')
+    if lumifile:
+        logger.info('Lumi mask for the original dataset: %s' % lumifile)
+        if lumifile.startswith('http'):
+            lumiIn = LumiList(url=lumifile)
+        else:
+            lumiIn = LumiList(lumifile)
+    else:
+        logger.info('No lumi mask for the original dataset, will use the full lumi from input dataset %s' % config.Data.inputDataset)
+        lumiIn = getLumiListInValidFiles(config.Data.inputDataset, dbsurl=config.Data.inputDBS)
+
+    # get lumis of the processed dataset
+    outputDataset = ast.literal_eval(status_dict['outdatasets'])[0]
+    logger.info('Getting lumis in the output dataset %s' % outputDataset)
+    lumiDone = getLumiListInValidFiles(outputDataset, dbsurl='phys03')
+    lumiDone.writeJSON(os.path.join(cfgdir, config.General.requestName + '_lumi_processed.json'))
+
+    outpath = os.path.abspath(os.path.join(cfgdir, config.General.requestName + '_lumiMask.json'))
+    newLumiMask = lumiIn - lumiDone
+    newLumiMask.writeJSON(outpath)
+    return outpath
 
 
 def parseOptions(args):
@@ -255,17 +322,33 @@ def status(args):
             with open(_task_status_file) as f:
                 crab_task_status = json.load(f)
 
+        if args.prepare_recovery_task or args.submit_recovery_task:
+            work_area_rsb = work_area.rstrip('/') + args.recovery_task_suffix
+            _recovery_task_file = os.path.join(work_area_rsb, 'recovery_tasks.json')
+            if not os.path.exists(work_area_rsb):
+                os.makedirs(work_area_rsb)
+            if args.prepare_recovery_task:
+                recovery_tasks = {}
+            else:
+                with open(_recovery_task_file) as f:
+                    recovery_tasks = json.load(f)
+
         jobnames = [d for d in os.listdir(work_area) if d.startswith('crab_')]
         finished = 0
         job_status = {}
         submit_failed = []
         for dirname in jobnames:
+            if args.submit_recovery_task:
+                if dirname not in recovery_tasks or not recovery_tasks[dirname]['resubmit']:
+                    continue
+
             # skip jobs that are already completed
             if dirname in crab_task_status:
                 if crab_task_status[dirname].get('status', '') == 'COMPLETED':
                     logger.info('Skip completed job %s' % dirname)
                     finished += 1
                     continue
+            # check task status
             logger.info('Checking status of job %s' % dirname)
             ret = runCrabCommand('status', dir='%s/%s' % (work_area, dirname))
             try:
@@ -287,6 +370,38 @@ def status(args):
                 if ret['status'] == 'COMPLETED' and pcts_published != 100:
                     ret['status'] == 'PUBLISHING'
 
+            # save task status
+            crab_task_status[dirname] = ret
+
+            if args.prepare_recovery_task or args.submit_recovery_task:
+                if args.prepare_recovery_task:
+                    if ret['status'] == 'COMPLETED':
+                        continue
+                    # first kill the task
+                    if _confirm('Kill job %s/%s and prepare a recovery task?' % (work_area, dirname), silent_mode=args.yes):
+                        runCrabCommand('kill', dir='%s/%s' % (work_area, dirname))  # FIXME
+                        recovery_tasks[dirname] = {'completed': percent_finished, 'resubmit': True}
+
+                elif args.submit_recovery_task:
+                    if 'KILLED' not in ret['status']:
+                        skip = _confirm('Task %s/%s is not in status KILLED, wait and submit the recovery task later?' % (work_area, dirname), silent_mode=args.yes)
+                        if skip:
+                            continue
+                    config = loadConfig(work_area, dirname)
+                    config.General.workArea = work_area_rsb
+                    config.Data.lumiMask = calcLumiForRecovery(config, ret, work_area_rsb)
+                    cfgpath = writeConfig(config, work_area_rsb)
+                    if args.dryrun:
+                        print('-' * 50)
+                        print(config)
+                        continue
+                    logger.info('Submitting recovery task for %s/%s' % (work_area, dirname))
+                    cmd = 'crab submit -c {cfgpath}'.format(cfgpath=cfgpath)
+                    p = subprocess.Popen(cmd, shell=True)
+                    p.communicate()
+                # move on to next task
+                continue
+
             if ret['status'] == 'COMPLETED':
                 finished += 1
             elif ret['dbStatus'] == 'SUBMITFAILED':
@@ -299,7 +414,6 @@ def status(args):
                     p.communicate()
                     if p.returncode != 0:
                         submit_failed.append(ret['inputDataset'])
-
             elif states.get('failed', 0) > 0 and 'killed' not in ret['status'].lower() and not args.no_resubmit:
                 logger.info('Resubmitting job %s with options %s' % (dirname, str(kwargs)))
                 runCrabCommand('resubmit', dir='%s/%s' % (work_area, dirname), **kwargs)
@@ -308,8 +422,6 @@ def status(args):
                 logger.info('Resubmitting job %s for failed publication' % dirname)
                 runCrabCommand('resubmit', dir='%s/%s' % (work_area, dirname), publication=True)
 
-            # save this
-            crab_task_status[dirname] = ret
 
         logger.info('====== Summary (%s) ======\n' % (work_area) +
                      '\n'.join(['%s: %s' % (k, job_status[k]) for k in natural_sort(job_status.keys())]))
@@ -320,6 +432,10 @@ def status(args):
         # write job status file
         with open(_task_status_file, 'w') as f:
             json.dump(crab_task_status, f, indent=2)
+
+        if args.prepare_recovery_task:
+            with open(_recovery_task_file, 'w') as f:
+                json.dump(recovery_tasks, f, indent=2)
 
 
 def summary_from_log_file():
@@ -390,6 +506,10 @@ def main():
                         action='store_true', default=False,
                         help='Set the inputDataset parameter to the python config file. Default: %(default)s'
                         )
+    parser.add_argument('--input-files',
+                        default=[], nargs='*',
+                        help='Set input files to be shipped with the CRAB jobs. Default: %(default)s'
+                        )
     parser.add_argument('--work-area', nargs='*',
                         default='crab_projects',
                         help='Crab project area. Default: %(default)s'
@@ -399,7 +519,7 @@ def main():
                         help='Number of CPU cores. Default: %(default)d'
                         )
     parser.add_argument('--max-memory',
-                        default=2500, type=int,
+                        default=2000, type=int,
                         help='Number of memory. Default: %(default)d MB'
                         )
     parser.add_argument('--dryrun',
@@ -430,6 +550,22 @@ def main():
                         action='store_true', default=False,
                         help='Kill jobs. Default: %(default)s'
                         )
+    parser.add_argument('--prepare-recovery-task',
+                        action='store_true', default=False,
+                        help='Prepare recovery tasks. This will kill the current jobs. Default: %(default)s'
+                        )
+    parser.add_argument('--submit-recovery-task',
+                        action='store_true', default=False,
+                        help='Submit recovery tasks. This will check if the original job has been killed. Default: %(default)s'
+                        )
+    parser.add_argument('--recovery-task-suffix',
+                        default='_rsb',
+                        help='Suffix for the work area of the recovery tasks. Default: %(default)s'
+                        )
+    parser.add_argument('-y', '--yes',
+                        action='store_true', default=False,
+                        help='Do not ask for confirmation. Default: %(default)s'
+                        )
     parser.add_argument('--options',
                         default='',
                         help='CRAB command options, space separated string. Default: %(default)s'
@@ -447,7 +583,7 @@ def main():
     # write a separator to distinguish between different runs
     logger.info(_separator)
 
-    if args.status:
+    if args.status or args.prepare_recovery_task or args.submit_recovery_task:
         status(args)
         return
 

@@ -119,6 +119,7 @@ void FatJetInfoFiller::book() {
   data.add<float>("fj_sdmass", 0);
   data.add<float>("fj_sdmass_fromsubjets", 0);
   data.add<float>("fj_rho", 0);
+  data.add<float>("fj_uncorrsdmass", 0);
   data.add<float>("fj_corrsdmass", 0);
 
   // subjets: soft drop gives up to 2 subjets
@@ -160,33 +161,33 @@ void FatJetInfoFiller::book() {
   data.add<int>("fj_ncHadrons", 0);
 
   //double-b inputs
-  data.add<float>("fj_z_ratio", 0);
-  data.add<float>("fj_trackSipdSig_3", 0);
-  data.add<float>("fj_trackSipdSig_2", 0);
-  data.add<float>("fj_trackSipdSig_1", 0);
-  data.add<float>("fj_trackSipdSig_0", 0);
-  data.add<float>("fj_trackSipdSig_1_0", 0);
-  data.add<float>("fj_trackSipdSig_0_0", 0);
-  data.add<float>("fj_trackSipdSig_1_1", 0);
-  data.add<float>("fj_trackSipdSig_0_1", 0);
-  data.add<float>("fj_trackSip2dSigAboveCharm_0", 0);
-  data.add<float>("fj_trackSip2dSigAboveBottom_0", 0);
-  data.add<float>("fj_trackSip2dSigAboveBottom_1", 0);
-  data.add<float>("fj_tau1_trackEtaRel_0", 0);
-  data.add<float>("fj_tau1_trackEtaRel_1", 0);
-  data.add<float>("fj_tau1_trackEtaRel_2", 0);
-  data.add<float>("fj_tau0_trackEtaRel_0", 0);
-  data.add<float>("fj_tau0_trackEtaRel_1", 0);
-  data.add<float>("fj_tau0_trackEtaRel_2", 0);
-  data.add<float>("fj_tau_vertexMass_0", 0);
-  data.add<float>("fj_tau_vertexEnergyRatio_0", 0);
-  data.add<float>("fj_tau_vertexDeltaR_0", 0);
-  data.add<float>("fj_tau_flightDistance2dSig_0", 0);
-  data.add<float>("fj_tau_vertexMass_1", 0);
-  data.add<float>("fj_tau_vertexEnergyRatio_1", 0);
-  data.add<float>("fj_tau_flightDistance2dSig_1", 0);
-  data.add<float>("fj_jetNTracks", 0);
-  data.add<float>("fj_nSV", 0);
+  // data.add<float>("fj_z_ratio", 0);
+  // data.add<float>("fj_trackSipdSig_3", 0);
+  // data.add<float>("fj_trackSipdSig_2", 0);
+  // data.add<float>("fj_trackSipdSig_1", 0);
+  // data.add<float>("fj_trackSipdSig_0", 0);
+  // data.add<float>("fj_trackSipdSig_1_0", 0);
+  // data.add<float>("fj_trackSipdSig_0_0", 0);
+  // data.add<float>("fj_trackSipdSig_1_1", 0);
+  // data.add<float>("fj_trackSipdSig_0_1", 0);
+  // data.add<float>("fj_trackSip2dSigAboveCharm_0", 0);
+  // data.add<float>("fj_trackSip2dSigAboveBottom_0", 0);
+  // data.add<float>("fj_trackSip2dSigAboveBottom_1", 0);
+  // data.add<float>("fj_tau1_trackEtaRel_0", 0);
+  // data.add<float>("fj_tau1_trackEtaRel_1", 0);
+  // data.add<float>("fj_tau1_trackEtaRel_2", 0);
+  // data.add<float>("fj_tau0_trackEtaRel_0", 0);
+  // data.add<float>("fj_tau0_trackEtaRel_1", 0);
+  // data.add<float>("fj_tau0_trackEtaRel_2", 0);
+  // data.add<float>("fj_tau_vertexMass_0", 0);
+  // data.add<float>("fj_tau_vertexEnergyRatio_0", 0);
+  // data.add<float>("fj_tau_vertexDeltaR_0", 0);
+  // data.add<float>("fj_tau_flightDistance2dSig_0", 0);
+  // data.add<float>("fj_tau_vertexMass_1", 0);
+  // data.add<float>("fj_tau_vertexEnergyRatio_1", 0);
+  // data.add<float>("fj_tau_flightDistance2dSig_1", 0);
+  // data.add<float>("fj_jetNTracks", 0);
+  // data.add<float>("fj_nSV", 0);
 
 }
 
@@ -289,7 +290,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   const auto& subjets = jet_helper.getSubJets();
 
   data.fill<float>("fj_n_sdsubjets", subjets.size());
-  data.fill<float>("fj_corrsdmass", jet_helper.getCorrectedPuppiSoftDropMass(subjets).second);
+  auto sdcorr = jet_helper.getCorrectedPuppiSoftDropMass(subjets);
+  data.fill<float>("fj_uncorrsdmass", sdcorr.first);
+  data.fill<float>("fj_corrsdmass", sdcorr.second);
 
   if (subjets.size() > 0){
     const auto &sj1 = subjets.at(0);
@@ -357,33 +360,33 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   data.fill<int>("fj_ncHadrons", jet.jetFlavourInfo().getcHadrons().size());
 
   //double-b inputs
-  data.fill<float>("fj_z_ratio", vars.get(reco::btau::z_ratio));
-  data.fill<float>("fj_trackSipdSig_3", vars.get(reco::btau::trackSip3dSig_3));
-  data.fill<float>("fj_trackSipdSig_2", vars.get(reco::btau::trackSip3dSig_2));
-  data.fill<float>("fj_trackSipdSig_1", vars.get(reco::btau::trackSip3dSig_1));
-  data.fill<float>("fj_trackSipdSig_0", vars.get(reco::btau::trackSip3dSig_0));
-  data.fill<float>("fj_trackSipdSig_1_0", vars.get(reco::btau::tau2_trackSip3dSig_0));
-  data.fill<float>("fj_trackSipdSig_0_0", vars.get(reco::btau::tau1_trackSip3dSig_0));
-  data.fill<float>("fj_trackSipdSig_1_1", vars.get(reco::btau::tau2_trackSip3dSig_1));
-  data.fill<float>("fj_trackSipdSig_0_1", vars.get(reco::btau::tau1_trackSip3dSig_1));
-  data.fill<float>("fj_trackSip2dSigAboveCharm_0", vars.get(reco::btau::trackSip2dSigAboveCharm));
-  data.fill<float>("fj_trackSip2dSigAboveBottom_0", vars.get(reco::btau::trackSip2dSigAboveBottom_0));
-  data.fill<float>("fj_trackSip2dSigAboveBottom_1", vars.get(reco::btau::trackSip2dSigAboveBottom_1));
-  data.fill<float>("fj_tau1_trackEtaRel_0", vars.get(reco::btau::tau2_trackEtaRel_0));
-  data.fill<float>("fj_tau1_trackEtaRel_1", vars.get(reco::btau::tau2_trackEtaRel_1));
-  data.fill<float>("fj_tau1_trackEtaRel_2", vars.get(reco::btau::tau2_trackEtaRel_2));
-  data.fill<float>("fj_tau0_trackEtaRel_0", vars.get(reco::btau::tau1_trackEtaRel_0));
-  data.fill<float>("fj_tau0_trackEtaRel_1", vars.get(reco::btau::tau1_trackEtaRel_1));
-  data.fill<float>("fj_tau0_trackEtaRel_2", vars.get(reco::btau::tau1_trackEtaRel_2));
-  data.fill<float>("fj_tau_vertexMass_0", vars.get(reco::btau::tau1_vertexMass));
-  data.fill<float>("fj_tau_vertexEnergyRatio_0", vars.get(reco::btau::tau1_vertexEnergyRatio));
-  data.fill<float>("fj_tau_vertexDeltaR_0", vars.get(reco::btau::tau1_vertexDeltaR));
-  data.fill<float>("fj_tau_flightDistance2dSig_0", vars.get(reco::btau::tau1_flightDistance2dSig));
-  data.fill<float>("fj_tau_vertexMass_1", vars.get(reco::btau::tau2_vertexMass));
-  data.fill<float>("fj_tau_vertexEnergyRatio_1", vars.get(reco::btau::tau2_vertexEnergyRatio));
-  data.fill<float>("fj_tau_flightDistance2dSig_1", vars.get(reco::btau::tau2_flightDistance2dSig));
-  data.fill<float>("fj_jetNTracks", vars.get(reco::btau::jetNTracks));
-  data.fill<float>("fj_nSV", vars.get(reco::btau::jetNSecondaryVertices));
+  // data.fill<float>("fj_z_ratio", vars.get(reco::btau::z_ratio));
+  // data.fill<float>("fj_trackSipdSig_3", vars.get(reco::btau::trackSip3dSig_3));
+  // data.fill<float>("fj_trackSipdSig_2", vars.get(reco::btau::trackSip3dSig_2));
+  // data.fill<float>("fj_trackSipdSig_1", vars.get(reco::btau::trackSip3dSig_1));
+  // data.fill<float>("fj_trackSipdSig_0", vars.get(reco::btau::trackSip3dSig_0));
+  // data.fill<float>("fj_trackSipdSig_1_0", vars.get(reco::btau::tau2_trackSip3dSig_0));
+  // data.fill<float>("fj_trackSipdSig_0_0", vars.get(reco::btau::tau1_trackSip3dSig_0));
+  // data.fill<float>("fj_trackSipdSig_1_1", vars.get(reco::btau::tau2_trackSip3dSig_1));
+  // data.fill<float>("fj_trackSipdSig_0_1", vars.get(reco::btau::tau1_trackSip3dSig_1));
+  // data.fill<float>("fj_trackSip2dSigAboveCharm_0", vars.get(reco::btau::trackSip2dSigAboveCharm));
+  // data.fill<float>("fj_trackSip2dSigAboveBottom_0", vars.get(reco::btau::trackSip2dSigAboveBottom_0));
+  // data.fill<float>("fj_trackSip2dSigAboveBottom_1", vars.get(reco::btau::trackSip2dSigAboveBottom_1));
+  // data.fill<float>("fj_tau1_trackEtaRel_0", vars.get(reco::btau::tau2_trackEtaRel_0));
+  // data.fill<float>("fj_tau1_trackEtaRel_1", vars.get(reco::btau::tau2_trackEtaRel_1));
+  // data.fill<float>("fj_tau1_trackEtaRel_2", vars.get(reco::btau::tau2_trackEtaRel_2));
+  // data.fill<float>("fj_tau0_trackEtaRel_0", vars.get(reco::btau::tau1_trackEtaRel_0));
+  // data.fill<float>("fj_tau0_trackEtaRel_1", vars.get(reco::btau::tau1_trackEtaRel_1));
+  // data.fill<float>("fj_tau0_trackEtaRel_2", vars.get(reco::btau::tau1_trackEtaRel_2));
+  // data.fill<float>("fj_tau_vertexMass_0", vars.get(reco::btau::tau1_vertexMass));
+  // data.fill<float>("fj_tau_vertexEnergyRatio_0", vars.get(reco::btau::tau1_vertexEnergyRatio));
+  // data.fill<float>("fj_tau_vertexDeltaR_0", vars.get(reco::btau::tau1_vertexDeltaR));
+  // data.fill<float>("fj_tau_flightDistance2dSig_0", vars.get(reco::btau::tau1_flightDistance2dSig));
+  // data.fill<float>("fj_tau_vertexMass_1", vars.get(reco::btau::tau2_vertexMass));
+  // data.fill<float>("fj_tau_vertexEnergyRatio_1", vars.get(reco::btau::tau2_vertexEnergyRatio));
+  // data.fill<float>("fj_tau_flightDistance2dSig_1", vars.get(reco::btau::tau2_flightDistance2dSig));
+  // data.fill<float>("fj_jetNTracks", vars.get(reco::btau::jetNTracks));
+  // data.fill<float>("fj_nSV", vars.get(reco::btau::jetNSecondaryVertices));
 
   return true;
 }

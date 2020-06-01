@@ -35,15 +35,15 @@ void PFCompleteFiller::book() {
 
   data.addMulti<float>("pfcand_phirel");
   data.addMulti<float>("pfcand_etarel");
-//  data.addMulti<float>("pfcand_deltaR");
+  // data.addMulti<float>("pfcand_deltaR");
   data.addMulti<float>("pfcand_puppiw");
   data.addMulti<float>("pfcand_abseta");
 
-//  data.addMulti<float>("pfcand_drminsvin"); // restricted to within the jet cone
-//
-//  // use uncorrected pT to order the two subjets
-//  data.addMulti<float>("pfcand_dr_uncorrsj1");
-//  data.addMulti<float>("pfcand_dr_uncorrsj2");
+  data.addMulti<float>("pfcand_drminsvin"); // restricted to within the jet cone
+
+  // use uncorrected pT to order the two subjets
+  data.addMulti<float>("pfcand_dr_uncorrsj1");
+  data.addMulti<float>("pfcand_dr_uncorrsj2");
 
   data.addMulti<float>("pfcand_charge");
   data.addMulti<float>("pfcand_isMu");
@@ -53,8 +53,8 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("pfcand_isNeutralHad");
 
   // for neutral
-//  data.addMulti<float>("pfcand_hcalFrac");
-//  data.addMulti<float>("pfcand_hcalFracCalib");
+  data.addMulti<float>("pfcand_hcalFrac");
+  data.addMulti<float>("pfcand_hcalFracCalib");
 
   // for charged
   data.addMulti<float>("pfcand_VTX_ass");
@@ -73,12 +73,12 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("pfcand_quality");
 
   // track btag info
-  data.addMulti<float>("pfcand_btagMomentum");
-//  data.addMulti<float>("pfcand_btagEta");
+  // data.addMulti<float>("pfcand_btagMomentum");
+  // data.addMulti<float>("pfcand_btagEta");
   data.addMulti<float>("pfcand_btagEtaRel");
-//  data.addMulti<float>("pfcand_btagPtRel");
-//  data.addMulti<float>("pfcand_btagPPar");
-//  data.addMulti<float>("pfcand_btagDeltaR");
+  data.addMulti<float>("pfcand_btagPtRel");
+  // data.addMulti<float>("pfcand_btagPPar");
+  // data.addMulti<float>("pfcand_btagDeltaR");
   data.addMulti<float>("pfcand_btagPtRatio");
   data.addMulti<float>("pfcand_btagPParRatio");
   data.addMulti<float>("pfcand_btagSip3dVal");
@@ -109,24 +109,24 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
     data.fillMulti<float>("pfcand_phirel", reco::deltaPhi(*packed_cand, jet));
     data.fillMulti<float>("pfcand_etarel", etasign * (packed_cand->eta() - jet.eta()));
-//    data.fillMulti<float>("pfcand_deltaR", reco::deltaR(*packed_cand, jet));
+    // data.fillMulti<float>("pfcand_deltaR", reco::deltaR(*packed_cand, jet));
     data.fillMulti<float>("pfcand_abseta", std::abs(packed_cand->eta()));
 
     data.fillMulti<float>("pfcand_puppiw", jet_helper.getPuppiWeight(cand));
 
-//    double minDRin = 2.*jetR_;
-//    for (const auto &sv : *SVs){
-//      double dr = reco::deltaR(*packed_cand, sv);
-//      if (dr < minDRin && reco::deltaR(jet, sv) < jetR_) minDRin = dr;
-//    }
-//    data.fillMulti<float>("pfcand_drminsvin", minDRin);
-//
-//    // use uncorrected pT to order the two subjets
-//    {
-//      const auto& subjets = jet_helper.getUncorrSubJets();
-//      data.fillMulti<float>("pfcand_dr_uncorrsj1", subjets.size()>0 ? reco::deltaR(*packed_cand, *subjets.at(0)) : -1);
-//      data.fillMulti<float>("pfcand_dr_uncorrsj2", subjets.size()>1 ? reco::deltaR(*packed_cand, *subjets.at(1)) : -1);
-//    }
+    double minDRin = 2.*jetR_;
+    for (const auto &sv : *SVs){
+      double dr = reco::deltaR(*packed_cand, sv);
+      if (dr < minDRin && reco::deltaR(jet, sv) < jetR_) minDRin = dr;
+    }
+    data.fillMulti<float>("pfcand_drminsvin", minDRin);
+
+    // use uncorrected pT to order the two subjets
+    {
+      const auto& subjets = jet_helper.getUncorrSubJets();
+      data.fillMulti<float>("pfcand_dr_uncorrsj1", subjets.size()>0 ? reco::deltaR(*packed_cand, *subjets.at(0)) : -1);
+      data.fillMulti<float>("pfcand_dr_uncorrsj2", subjets.size()>1 ? reco::deltaR(*packed_cand, *subjets.at(1)) : -1);
+    }
 
     data.fillMulti<float>("pfcand_charge", packed_cand->charge());
     data.fillMulti<float>("pfcand_isEl", std::abs(packed_cand->pdgId())==11);
@@ -135,15 +135,15 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     data.fillMulti<float>("pfcand_isGamma", std::abs(packed_cand->pdgId())==22);
     data.fillMulti<float>("pfcand_isNeutralHad", std::abs(packed_cand->pdgId())==130);
 
-//    // for neutral
-//    float hcal_fraction = 0.;
-//    if (packed_cand->pdgId() == 1 || packed_cand->pdgId() == 130) {
-//      hcal_fraction = packed_cand->hcalFraction();
-//    } else if (packed_cand->isIsolatedChargedHadron()) {
-//      hcal_fraction = packed_cand->rawHcalFraction();
-//    }
-//    data.fillMulti<float>("pfcand_hcalFrac", hcal_fraction);
-//    data.fillMulti<float>("pfcand_hcalFracCalib", packed_cand->hcalFraction());
+    // for neutral
+    float hcal_fraction = 0.;
+    if (packed_cand->pdgId() == 1 || packed_cand->pdgId() == 130) {
+      hcal_fraction = packed_cand->hcalFraction();
+    } else if (packed_cand->isIsolatedChargedHadron()) {
+      hcal_fraction = packed_cand->rawHcalFraction();
+    }
+    data.fillMulti<float>("pfcand_hcalFrac", hcal_fraction);
+    data.fillMulti<float>("pfcand_hcalFracCalib", packed_cand->hcalFraction());
 
     // for charged
     data.fillMulti<float>("pfcand_VTX_ass", packed_cand->pvAssociationQuality());
@@ -170,12 +170,12 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     TrackInfoBuilder trkinfo;
     trkinfo.buildTrackInfo(builder_, *packed_cand, jet, vertices->at(0));
 
-    data.fillMulti<float>("pfcand_btagMomentum", catchInfs(trkinfo.getTrackMomentum()));
-//    data.fillMulti<float>("pfcand_btagEta", catchInfs(trkinfo.getTrackEta()));
+    // data.fillMulti<float>("pfcand_btagMomentum", catchInfs(trkinfo.getTrackMomentum()));
+    // data.fillMulti<float>("pfcand_btagEta", catchInfs(trkinfo.getTrackEta()));
     data.fillMulti<float>("pfcand_btagEtaRel", catchInfs(trkinfo.getTrackEtaRel()));
-//    data.fillMulti<float>("pfcand_btagPtRel", catchInfs(trkinfo.getTrackPtRel()));
-//    data.fillMulti<float>("pfcand_btagPPar", catchInfs(trkinfo.getTrackPPar()));
-//    data.fillMulti<float>("pfcand_btagDeltaR", catchInfs(trkinfo.getTrackDeltaR()));
+    data.fillMulti<float>("pfcand_btagPtRel", catchInfs(trkinfo.getTrackPtRel()));
+    // data.fillMulti<float>("pfcand_btagPPar", catchInfs(trkinfo.getTrackPPar()));
+    // data.fillMulti<float>("pfcand_btagDeltaR", catchInfs(trkinfo.getTrackDeltaR()));
     data.fillMulti<float>("pfcand_btagPtRatio", catchInfs(trkinfo.getTrackPtRatio()));
     data.fillMulti<float>("pfcand_btagPParRatio", catchInfs(trkinfo.getTrackPParRatio()));
     data.fillMulti<float>("pfcand_btagSip3dVal", catchInfs(trkinfo.getTrackSip3dVal()));
