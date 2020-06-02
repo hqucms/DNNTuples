@@ -10,7 +10,7 @@ cmsenv
 git cms-addpkg PhysicsTools/ONNXRuntime
 
 # clone this repo into "DeepNTuples" directory
-git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/11_1_X
+git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/UL/11_1_X
 
 # Use a faster version of ONNXRuntime
 $CMSSW_BASE/src/DeepNTuples/Ntupler/scripts/install_onnxruntime.sh

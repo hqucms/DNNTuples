@@ -68,8 +68,8 @@ def parseDatasetName(dataset):
             if s.startswith('mc'):
                 keep_idx = idx
                 break
-        rlt = re.search(r'_(v[0-9]+)(_ext[0-9]+|)(-v[0-9]+)', ver).groups()
-        ext = rlt[1].replace('_', '-') + rlt[2]
+        rlt = re.search(r'_(v[0-9]+)(_ext[0-9]+|)(_L1v[0-9]+|)(-v[0-9]+)', ver).groups()
+        ext = rlt[1].replace('_', '-') + rlt[-1]
         vername = '_'.join(ver_pieces[:keep_idx]) + '_' + rlt[0] + ext
         # hack
         if 'backup' in ver:
@@ -150,7 +150,7 @@ def createConfig(args, dataset):
 
     procname, vername, ext, isMC = parseDatasetName(dataset)
 
-    config.General.requestName = procname + ext
+    config.General.requestName = procname[:100 - len(ext)] + ext
     config.General.workArea = args.work_area
     config.General.transferOutputs = True
     config.General.transferLogs = False
