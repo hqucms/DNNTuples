@@ -3,14 +3,14 @@
 ## Setup
 ```
 # use CMSSW_11_1_0_pre8 which has Puppi V14
-cmsrel CMSSW_11_1_0_pre8
-cd CMSSW_11_1_0_pre8/src
+cmsrel CMSSW_11_1_0
+cd CMSSW_11_1_0/src
 cmsenv
 
 git cms-addpkg PhysicsTools/ONNXRuntime
 
 # clone this repo into "DeepNTuples" directory
-git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/UL/11_1_X
+git clone ssh://git@gitlab.cern.ch:7999/hqu/DNNTuplesAK8.git DeepNTuples -b ak4/dev/UL/11_1_X
 
 # Use a faster version of ONNXRuntime
 $CMSSW_BASE/src/DeepNTuples/Ntupler/scripts/install_onnxruntime.sh

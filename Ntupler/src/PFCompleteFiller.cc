@@ -41,10 +41,6 @@ void PFCompleteFiller::book() {
 
   data.addMulti<float>("pfcand_drminsvin"); // restricted to within the jet cone
 
-  // use uncorrected pT to order the two subjets
-  data.addMulti<float>("pfcand_dr_uncorrsj1");
-  data.addMulti<float>("pfcand_dr_uncorrsj2");
-
   data.addMulti<float>("pfcand_charge");
   data.addMulti<float>("pfcand_isMu");
   data.addMulti<float>("pfcand_isEl");
@@ -120,13 +116,6 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
       if (dr < minDRin && reco::deltaR(jet, sv) < jetR_) minDRin = dr;
     }
     data.fillMulti<float>("pfcand_drminsvin", minDRin);
-
-    // use uncorrected pT to order the two subjets
-    {
-      const auto& subjets = jet_helper.getUncorrSubJets();
-      data.fillMulti<float>("pfcand_dr_uncorrsj1", subjets.size()>0 ? reco::deltaR(*packed_cand, *subjets.at(0)) : -1);
-      data.fillMulti<float>("pfcand_dr_uncorrsj2", subjets.size()>1 ? reco::deltaR(*packed_cand, *subjets.at(1)) : -1);
-    }
 
     data.fillMulti<float>("pfcand_charge", packed_cand->charge());
     data.fillMulti<float>("pfcand_isEl", std::abs(packed_cand->pdgId())==11);

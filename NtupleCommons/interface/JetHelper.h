@@ -25,7 +25,6 @@ public:
 
   // set genjet (clustered w/ neutrino)
   void setGenjetWithNu(const reco::GenJetRef &genjetRef) { genjetWithNu_ = (genjetRef.isNull() ? nullptr : &(*genjetRef)); }
-  void setGenjetWithNuSoftDrop(const reco::GenJetRef &genjetRef) { genjetWithNuSoftDrop_ = (genjetRef.isNull() ? nullptr : &(*genjetRef)); }
   // ------
 
   // return jet constituents (PF candidates)
@@ -40,13 +39,7 @@ public:
   }
 
   const pat::Jet& jet() const { return *jet_; }
-  const std::vector<const pat::Jet*>& getSubJets() const { return subjets_; }
-  const std::vector<const pat::Jet*>& getUncorrSubJets() const { return uncorr_subjets_; }
-
   const reco::GenJet* genjetWithNu() const { return genjetWithNu_; }
-  const reco::GenJet* genjetWithNuSoftDrop() const { return genjetWithNuSoftDrop_; }
-
-  std::pair<double, double> getCorrectedPuppiSoftDropMass(const std::vector<const pat::Jet*> &puppisubjets) const; // tmp
 
 
 private:
@@ -57,9 +50,6 @@ private:
   // data members
   const pat::Jet *jet_ = nullptr;
   const reco::GenJet *genjetWithNu_ = nullptr;
-  const reco::GenJet *genjetWithNuSoftDrop_ = nullptr;
-  std::vector<const pat::Jet*> subjets_;
-  std::vector<const pat::Jet*> uncorr_subjets_;
   std::vector<reco::CandidatePtr> daughters_;
   std::map<reco::CandidatePtr::key_type, float> puppi_wgt_cache_;
 

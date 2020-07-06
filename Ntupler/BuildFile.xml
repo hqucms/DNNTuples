@@ -4,7 +4,6 @@
 <use name="TrackingTools/Records"/>
 <use name="PhysicsTools/SelectorUtils"/>
 <use name="DeepNTuples/NtupleCommons"/>
-<use name="DeepNTuples/FatJetHelpers"/>
 <use name="DeepNTuples/BTagHelpers"/>
 <export>
   <lib name="1"/>

@@ -42,7 +42,6 @@ private:
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
   edm::EDGetTokenT<edm::View<reco::Candidate>> candToken_;
   edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuMatchToken_;
-  edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchToken_;
 
   edm::Service<TFileService> fs;
   TreeWriter *treeWriter = nullptr;
@@ -58,8 +57,7 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     jetR(iConfig.getParameter<double>("jetR")),
     jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
     candToken_(consumes<edm::View<reco::Candidate>>(iConfig.getParameter<edm::InputTag>("pfcands"))),
-    genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch"))),
-    genJetWithNuSoftDropMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsSoftDropMatch")))
+    genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch")))
 {
 
   // register modules
@@ -104,16 +102,12 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuMatchHandle;
   iEvent.getByToken(genJetWithNuMatchToken_, genJetWithNuMatchHandle);
 
-  edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuSoftDropMatchHandle;
-  iEvent.getByToken(genJetWithNuSoftDropMatchToken_, genJetWithNuSoftDropMatchHandle);
-
   for (unsigned idx=0; idx<jets->size(); ++idx){
     bool write_ = true;
 
     const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
     JetHelper jet_helper(&jet, candHandle);
     jet_helper.setGenjetWithNu((*genJetWithNuMatchHandle)[jets->refAt(idx)]);
-    jet_helper.setGenjetWithNuSoftDrop((*genJetWithNuSoftDropMatchHandle)[jets->refAt(idx)]);
 
     for (auto *m : modules_){
       if (!m->fillBranches(jet.correctedJet("Uncorrected"), idx, jet_helper)){

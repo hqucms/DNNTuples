@@ -13,9 +13,9 @@
 namespace deepntuples {
 
 void JetInfoFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector && cc) {
-  minPt_ = iConfig.getUntrackedParameter<double>("jetPtMin", 150);
-  maxPt_ = iConfig.getUntrackedParameter<double>("jetPtMax", -1);
-  maxAbsEta_ = iConfig.getUntrackedParameter<double>("jetAbsEtaMax", 2.4);
+  minPt_ = iConfig.getUntrackedParameter<double>("jetPtMin", 15);
+  maxPt_ = iConfig.getUntrackedParameter<double>("jetPtMax", 1000);
+  maxAbsEta_ = iConfig.getUntrackedParameter<double>("jetAbsEtaMax", 2.5);
   btag_discriminators_ = iConfig.getParameter<std::vector<std::string>>("bDiscriminators");
 
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
@@ -58,7 +58,6 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
   // truth labels
   float gen_pt = jet.genJet() ? jet.genJet()->pt() : 0;
   data.fill<float>("gen_pt", gen_pt);
-  data.fill<float>("Delta_gen_pt", gen_pt - jet.correctedJet("Uncorrected").pt());
 
   auto flavor = flavorDef.jet_flavour(jet);
   data.fill<int>("isB", flavor==JetFlavor::B);
@@ -79,6 +78,7 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
 
   // jet id
   data.fill<float>("jet_tightId", jetIdTight(jet));
+  data.fill<float>("jet_tightIdLepVeto", jetIdTightLepVeto(jet));
 
   for(const auto& disc : btag_discriminators_) {
     std::string name(disc);
@@ -99,7 +99,6 @@ void JetInfoFiller::book() {
 
   // truth labels
   data.add<float>("gen_pt", 0);
-  data.add<float>("Delta_gen_pt", 0);
 
   data.add<int>("isB", 0);
   data.add<int>("isBB", 0);
@@ -119,6 +118,7 @@ void JetInfoFiller::book() {
 
   // jet id
   data.add<float>("jet_tightId", 0);
+  data.add<float>("jet_tightIdLepVeto", 0);
 
   for(auto name : btag_discriminators_) {
     std::replace(name.begin(), name.end(), ':', '_');

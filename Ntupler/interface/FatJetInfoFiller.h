@@ -12,7 +12,6 @@
 #include "DataFormats/BTauReco/interface/BoostedDoubleSVTagInfo.h"
 
 #include "DeepNTuples/NtupleCommons/interface/NtupleBase.h"
-#include "DeepNTuples/FatJetHelpers/interface/FatJetMatching.h"
 
 
 namespace deepntuples {
@@ -20,7 +19,7 @@ namespace deepntuples {
 class FatJetInfoFiller: public NtupleBase {
 public:
   FatJetInfoFiller() : FatJetInfoFiller("") {}
-  FatJetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), fjmatch_(jetR, true) {}
+  FatJetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR) {}
   virtual ~FatJetInfoFiller() {}
 
   // get input parameters from the cfg file
@@ -36,17 +35,13 @@ protected:
   virtual bool fill(const pat::Jet &jet, size_t jetidx, const JetHelper &jet_helper) override;
 
 private:
-  FatJetMatching fjmatch_;
-  bool useReclusteredJets_ = false;
+  bool isPuppiJets_ = false;
   bool isQCDSample_ = false;
   bool isTrainSample_ = false;
 
   bool sample_use_pythia_ = false;
   bool sample_use_herwig_ = false;
   bool sample_use_madgraph_ = false;
-
-  std::string fjTagInfoName;
-  std::string fjName;
 
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;

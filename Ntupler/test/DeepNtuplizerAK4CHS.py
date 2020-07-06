@@ -6,6 +6,8 @@ options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
 options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/BulkGravitonToHHTo4Q_MX-600to6000_MH-15to250_part2_TuneCP5_13TeV-madgraph_pythia8/MINIAODSIM/multigridpack_106X_mc2017_realistic_v6-v1/50000/FB46C2C2-73A4-A64C-A3D7-FC47C6A48871.root'
+# options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/QCD_Pt-15to7000_TuneCP5_Flat_13TeV_pythia8/MINIAODSIM/106X_mc2017_realistic_v6_ext2-v2/60000/E0502E95-AA7E-B441-9277-498113BA458C.root'
+# options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/TTToSemiLeptonic_mtop171p5_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_mc2017_realistic_v6-v2/60000/F06BD23E-48AB-1F4D-A0FB-80DD370F4868.root'
 options.maxEvents = -1
 
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
@@ -60,6 +62,9 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, globalTagMap[era], '')
 print('Using global tag', process.GlobalTag.globaltag)
+process.TransientTrackBuilderESProducer = cms.ESProducer("TransientTrackBuilderESProducer",
+    ComponentName=cms.string('TransientTrackBuilder')
+)
 # ---------------------------------------------------------
 # read JEC from sqlite
 if era == 'Summer19UL17':
@@ -91,114 +96,36 @@ if era == 'Summer19UL17':
     process.es_prefer_jec = cms.ESPrefer('PoolDBESSource', 'jec')
 # ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
-from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
-from RecoBTag.MXNet.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
 
-useReclusteredJets = True
-jetR = 0.8
-
-bTagInfos = [
-    'pfBoostedDoubleSVAK8TagInfos'
-]
+isPuppiJets = False
+jetR = 0.4
 
 bTagDiscriminators = [
-    'pfCombinedInclusiveSecondaryVertexV2BJetTags',
-    'pfBoostedDoubleSecondaryVertexAK8BJetTags',
-    # 'pfDeepDoubleBvLJetTags:probHbb',
-    # 'pfDeepDoubleCvLJetTags:probHcc',
-    # 'pfDeepDoubleCvBJetTags:probHcc',
-    # 'pfMassIndependentDeepDoubleBvLJetTags:probHbb',
-    # 'pfMassIndependentDeepDoubleCvLJetTags:probHcc',
-    # 'pfMassIndependentDeepDoubleCvBJetTags:probHcc',
+    'pfDeepFlavourJetTags:probb',
+    'pfDeepFlavourJetTags:probbb',
+    'pfDeepFlavourJetTags:problepb',
+    'pfDeepFlavourJetTags:probc',
+    'pfDeepFlavourJetTags:probuds',
+    'pfDeepFlavourJetTags:probg',
 ]
 
-subjetBTagDiscriminators = ['None']
-
-if useReclusteredJets:
-    JETCorrLevels = ['L2Relative', 'L3Absolute']
-
-    from DeepNTuples.Ntupler.jetToolbox_cff import jetToolbox
-    jetToolbox(process, 'ak8', 'dummySeq', 'noOutput',
-               PUMethod='Puppi', JETCorrPayload='AK8PFPuppi', JETCorrLevels=JETCorrLevels,
-               Cut='pt > 170.0 && abs(rapidity()) < 2.4',
-               runOnMC=True,
-               addNsub=True, maxTau=3,
-               addSoftDrop=True, addSoftDropSubjets=True, subJETCorrPayload='AK4PFPuppi', subJETCorrLevels=JETCorrLevels,
-               bTagDiscriminators=['pfCombinedInclusiveSecondaryVertexV2BJetTags'], subjetBTagDiscriminators=subjetBTagDiscriminators)
-
-    updateJetCollection(
-       process,
-       jetSource=cms.InputTag('packedPatJetsAK8PFPuppiSoftDrop'),
-       rParam=jetR,
-       jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-       btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll,
-       btagInfos=bTagInfos,
-       postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
-    )
-    process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addTagInfos = cms.bool(True)
-    process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addBTagInfo = cms.bool(True)
-
-    from RecoBTag.ONNXRuntime.pfDeepBoostedJetTags_cfi import pfDeepBoostedJetTags as _pfDeepBoostedJetTags
-    process.pfParticleNetJetTagsAK8WithPuppiDaughters = _pfDeepBoostedJetTags.clone(
-        src=process.pfParticleNetJetTagsAK8WithPuppiDaughters.src,
-        flav_names=process.pfParticleNetJetTagsAK8WithPuppiDaughters.flav_names,
-        preprocessParams=process.pfParticleNetJetTagsAK8WithPuppiDaughters.preprocessParams,
-        model_path='DeepNTuples/Ntupler/data/ParticleNet/ak8/ParticleNet.onnx',
-        )
-    process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters = _pfDeepBoostedJetTags.clone(
-        src=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.src,
-        flav_names=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.flav_names,
-        preprocessParams=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.preprocessParams,
-        model_path='DeepNTuples/Ntupler/data/ParticleNet-MD/ak8/ParticleNetMD.onnx',
-        )
-
-
-
-    srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
-else:
-    updateJetCollection(
-       process,
-       jetSource=cms.InputTag('slimmedJetsAK8'),
-       rParam=jetR,
-       jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-       btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll,
-       btagInfos=bTagInfos,
-    )
-    process.updatedPatJetsTransientCorrected.addTagInfos = cms.bool(True)
-    process.updatedPatJetsTransientCorrected.addBTagInfo = cms.bool(True)
-
-    srcJets = cms.InputTag('selectedUpdatedPatJets')
+updateJetCollection(
+    process,
+    jetSource=cms.InputTag('slimmedJets'),
+    jetCorrections=('AK4PFchs', cms.vstring(['L1FastJet', 'L2Relative', 'L3Absolute']), 'None'),
+)
+srcJets = cms.InputTag('selectedUpdatedPatJets')
 # ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask, addToProcessAndTask
 patTask = getPatAlgosToolsTask(process)
 
-from RecoJets.JetProducers.ak8GenJets_cfi import ak8GenJets
-process.ak8GenJetsWithNu = ak8GenJets.clone(
-    src='packedGenParticles',
-    rParam=cms.double(jetR),
-    jetPtMin=100.0
+from RecoJets.JetProducers.ak4GenJets_cfi import ak4GenJets
+process.ak4GenJetsWithNu = ak4GenJets.clone(
+    src='packedGenParticles'
     )
-process.ak8GenJetsWithNuSoftDrop = process.ak8GenJetsWithNu.clone(
-    useSoftDrop=cms.bool(True),
-    zcut=cms.double(0.1),
-    beta=cms.double(0.0),
-    R0=cms.double(jetR),
-    useExplicitGhosts=cms.bool(True)
-    )
-process.ak8GenJetsWithNuMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR
+process.ak4GenJetsWithNuMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR
     src=srcJets,  # RECO jets (any View<Jet> is ok)
-    matched=cms.InputTag("ak8GenJetsWithNu"),  # GEN jets  (must be GenJetCollection)
-    mcPdgId=cms.vint32(),  # n/a
-    mcStatus=cms.vint32(),  # n/a
-    checkCharge=cms.bool(False),  # n/a
-    maxDeltaR=cms.double(jetR),  # Minimum deltaR for the match
-    # maxDPtRel   = cms.double(3.0),                  # Minimum deltaPt/Pt for the match (not used in GenJetMatcher)
-    resolveAmbiguities=cms.bool(True),  # Forbid two RECO objects to match to the same GEN object
-    resolveByMatchQuality=cms.bool(False),  # False = just match input in order; True = pick lowest deltaR pair first
-)
-process.ak8GenJetsWithNuSoftDropMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR; pick best by deltaR
-    src=srcJets,  # RECO jets (any View<Jet> is ok)
-    matched=cms.InputTag("ak8GenJetsWithNuSoftDrop"),  # GEN jets  (must be GenJetCollection)
+    matched=cms.InputTag("ak4GenJetsWithNu"),  # GEN jets  (must be GenJetCollection)
     mcPdgId=cms.vint32(),  # n/a
     mcStatus=cms.vint32(),  # n/a
     checkCharge=cms.bool(False),  # n/a
@@ -208,20 +135,17 @@ process.ak8GenJetsWithNuSoftDropMatch = cms.EDProducer("GenJetMatcher",  # cut o
     resolveByMatchQuality=cms.bool(False),  # False = just match input in order; True = pick lowest deltaR pair first
 )
 process.genJetTask = cms.Task(
-    process.ak8GenJetsWithNu,
-    process.ak8GenJetsWithNuMatch,
-    process.ak8GenJetsWithNuSoftDrop,
-    process.ak8GenJetsWithNuSoftDropMatch,
+    process.ak4GenJetsWithNu,
+    process.ak4GenJetsWithNuMatch,
 )
 
 # DeepNtuplizer
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
 process.deepntuplizer.jets = srcJets
-process.deepntuplizer.useReclusteredJets = useReclusteredJets
-process.deepntuplizer.bDiscriminators = bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll
+process.deepntuplizer.isPuppiJets = isPuppiJets
+process.deepntuplizer.bDiscriminators = bTagDiscriminators
 
-process.deepntuplizer.genJetsMatch = 'ak8GenJetsWithNuMatch'
-process.deepntuplizer.genJetsSoftDropMatch = 'ak8GenJetsWithNuSoftDropMatch'
+process.deepntuplizer.genJetsMatch = 'ak4GenJetsWithNuMatch'
 
 process.deepntuplizer.isQCDSample = '/QCD_' in options.inputDataset
 process.deepntuplizer.isPythia = 'pythia' in options.inputDataset.lower()

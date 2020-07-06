@@ -1,6 +1,0 @@
-<use name="DataFormats/PatCandidates"/>
-<use name="DataFormats/HepMCCandidate"/>
-<use name="DeepNTuples/NtupleCommons"/>
-<export>
-  <lib   name="1"/>
-</export>

@@ -21,7 +21,8 @@ class JetInfoFiller: public NtupleBase {
 public:
   JetInfoFiller() : JetInfoFiller("") {}
   JetInfoFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR), flavorDef(jetR),
-      jetIdTight(PFJetIDSelectionFunctor::SUMMER18PUPPI, PFJetIDSelectionFunctor::TIGHT) {}
+      jetIdTight(PFJetIDSelectionFunctor::SUMMER18PUPPI, PFJetIDSelectionFunctor::TIGHT),
+      jetIdTightLepVeto(PFJetIDSelectionFunctor::SUMMER18PUPPI, PFJetIDSelectionFunctor::TIGHTLEPVETO){}
   virtual ~JetInfoFiller() {}
 
   // get input parameters from the cfg file
@@ -58,6 +59,7 @@ private:
   edm::Handle<reco::GenParticleCollection> genParticlesHandle;
 
   PFJetIDSelectionFunctor jetIdTight;
+  PFJetIDSelectionFunctor jetIdTightLepVeto;
 
 };
 
