@@ -27,6 +27,8 @@ void TrackInfoBuilder::buildTrackInfo(const edm::ESHandle<TransientTrackBuilder>
     trackSip3dSig_ = 0;
     trackJetDistVal_ = 0;
     trackJetDistSig_ = 0;
+    trackDecayLengthVal_ = 0;
+    trackDecayLengthSig_ = 0;
     return;
   }
 
@@ -40,6 +42,7 @@ void TrackInfoBuilder::buildTrackInfo(const edm::ESHandle<TransientTrackBuilder>
   Measurement1D meas_ip2d = IPTools::signedTransverseImpactParameter(transientTrack, jetXYZVector, pv).second;
   Measurement1D meas_ip3d = IPTools::signedImpactParameter3D(transientTrack, jetXYZVector, pv).second;
   Measurement1D jetdist = IPTools::jetTrackDistance(transientTrack, jetXYZVector, pv).second;
+  Measurement1D decay_length = IPTools::signedDecayLength3D(transientTrack, jetXYZVector, pv).second;
   math::XYZVector trackMom = trk.momentum();
   double trackMag = std::sqrt(trackMom.Mag2());
 
@@ -60,7 +63,8 @@ void TrackInfoBuilder::buildTrackInfo(const edm::ESHandle<TransientTrackBuilder>
   trackSip3dSig_ = catchInfs(meas_ip3d.significance());
   trackJetDistVal_ = catchInfs(jetdist.value());
   trackJetDistSig_ = catchInfs(jetdist.significance());
-
+  trackDecayLengthVal_ = catchInfs(decay_length.value());
+  trackDecayLengthSig_ = catchInfs(decay_length.significance());
 }
 
 } /* namespace deepntuples */

@@ -55,6 +55,8 @@ void PFCompleteFiller::book() {
   // for charged
   data.addMulti<float>("pfcand_VTX_ass");
   data.addMulti<float>("pfcand_fromPV");
+  data.addMulti<float>("pfcand_nValidHits");
+  data.addMulti<float>("pfcand_nValidPixelHits");
   data.addMulti<float>("pfcand_lostInnerHits");
   data.addMulti<float>("pfcand_trackHighPurity");
 
@@ -68,6 +70,16 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("pfcand_normchi2");
   data.addMulti<float>("pfcand_quality");
 
+  // track covariance
+  data.addMulti<float>("pfcand_dptdpt");
+  data.addMulti<float>("pfcand_detadeta");
+  data.addMulti<float>("pfcand_dphidphi");
+  data.addMulti<float>("pfcand_dxydxy");
+  data.addMulti<float>("pfcand_dzdz");
+  data.addMulti<float>("pfcand_dxydz");
+  data.addMulti<float>("pfcand_dphidxy");
+  data.addMulti<float>("pfcand_dlambdadz");
+
   // track btag info
   // data.addMulti<float>("pfcand_btagMomentum");
   // data.addMulti<float>("pfcand_btagEta");
@@ -77,10 +89,13 @@ void PFCompleteFiller::book() {
   // data.addMulti<float>("pfcand_btagDeltaR");
   data.addMulti<float>("pfcand_btagPtRatio");
   data.addMulti<float>("pfcand_btagPParRatio");
+  data.addMulti<float>("pfcand_btagSip2dVal");
+  data.addMulti<float>("pfcand_btagSip2dSig");
   data.addMulti<float>("pfcand_btagSip3dVal");
   data.addMulti<float>("pfcand_btagSip3dSig");
   data.addMulti<float>("pfcand_btagJetDistVal");
-//  data.addMulti<float>("pfcand_btagJetDistSig"); // always gives 0?
+  data.addMulti<float>("pfcand_btagDecayLengthVal");
+  data.addMulti<float>("pfcand_btagDecayLengthSig");
 
 }
 
@@ -150,9 +165,35 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
       const auto *trk = packed_cand->bestTrack();
       data.fillMulti<float>("pfcand_normchi2", catchInfs(trk->normalizedChi2()));
       data.fillMulti<float>("pfcand_quality", trk->qualityMask());
+      data.fillMulti<float>("pfcand_nValidHits", trk->hitPattern().numberOfValidHits());
+      data.fillMulti<float>("pfcand_nValidPixelHits", trk->hitPattern().numberOfValidPixelHits());
+
+      // track covariance
+      auto cov = [&](unsigned i, unsigned j) {
+        return catchInfs(trk->covariance(i, j));
+      };
+      data.fillMulti<float>("pfcand_dptdpt", cov(0,0));
+      data.fillMulti<float>("pfcand_detadeta", cov(1,1));
+      data.fillMulti<float>("pfcand_dphidphi", cov(2,2));
+      data.fillMulti<float>("pfcand_dxydxy", cov(3,3));
+      data.fillMulti<float>("pfcand_dzdz", cov(4,4));
+      data.fillMulti<float>("pfcand_dxydz", cov(3,4));
+      data.fillMulti<float>("pfcand_dphidxy", cov(2,3));
+      data.fillMulti<float>("pfcand_dlambdadz", cov(1,4));
     }else{
       data.fillMulti<float>("pfcand_normchi2", 999);
       data.fillMulti<float>("pfcand_quality", 0);
+      data.fillMulti<float>("pfcand_nValidHits", 0);
+      data.fillMulti<float>("pfcand_nValidPixelHits", 0);
+
+      data.fillMulti<float>("pfcand_dptdpt", 0);
+      data.fillMulti<float>("pfcand_detadeta", 0);
+      data.fillMulti<float>("pfcand_dphidphi", 0);
+      data.fillMulti<float>("pfcand_dxydxy", 0);
+      data.fillMulti<float>("pfcand_dzdz", 0);
+      data.fillMulti<float>("pfcand_dxydz", 0);
+      data.fillMulti<float>("pfcand_dphidxy", 0);
+      data.fillMulti<float>("pfcand_dlambdadz", 0);
     }
 
     // build track info map
@@ -167,12 +208,13 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
     // data.fillMulti<float>("pfcand_btagDeltaR", catchInfs(trkinfo.getTrackDeltaR()));
     data.fillMulti<float>("pfcand_btagPtRatio", catchInfs(trkinfo.getTrackPtRatio()));
     data.fillMulti<float>("pfcand_btagPParRatio", catchInfs(trkinfo.getTrackPParRatio()));
+    data.fillMulti<float>("pfcand_btagSip2dVal", catchInfs(trkinfo.getTrackSip2dVal()));
+    data.fillMulti<float>("pfcand_btagSip2dSig", catchInfs(trkinfo.getTrackSip2dSig()));
     data.fillMulti<float>("pfcand_btagSip3dVal", catchInfs(trkinfo.getTrackSip3dVal()));
     data.fillMulti<float>("pfcand_btagSip3dSig", catchInfs(trkinfo.getTrackSip3dSig()));
     data.fillMulti<float>("pfcand_btagJetDistVal", catchInfs(trkinfo.getTrackJetDistVal()));
-//    data.fillMulti<float>("pfcand_btagJetDistSig", catchInfs(trkinfo.getTrackJetDistSig()));
-
-
+    data.fillMulti<float>("pfcand_btagDecayLengthVal", catchInfs(trkinfo.getTrackDecayLengthVal()));
+    data.fillMulti<float>("pfcand_btagDecayLengthSig", catchInfs(trkinfo.getTrackDecayLengthSig()));
   }
 
 

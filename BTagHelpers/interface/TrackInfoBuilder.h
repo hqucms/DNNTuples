@@ -32,7 +32,8 @@ public:
   const float& getTrackSip3dSig() const {return trackSip3dSig_;}
   const float& getTrackJetDistVal() const {return trackJetDistVal_;}
   const float& getTrackJetDistSig() const {return trackJetDistSig_;}
-
+  const float& getTrackDecayLengthVal() const {return trackDecayLengthVal_;}
+  const float& getTrackDecayLengthSig() const {return trackDecayLengthSig_;}
 
 private:
 
@@ -50,6 +51,8 @@ private:
   float trackSip3dSig_ = 0;
   float trackJetDistVal_ = 0;
   float trackJetDistSig_ = 0;
+  float trackDecayLengthVal_ = 0;
+  float trackDecayLengthSig_ = 0;
 
 };
 
