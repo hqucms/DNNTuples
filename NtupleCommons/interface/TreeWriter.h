@@ -34,7 +34,7 @@ public :
     if(fRead){
       fTree->SetBranchAddress(name, &var);
     }else{
-      fTree->Branch(name, &var, TString(name).Append("/").Append(type).Data(), /*bufsize=32000*/1024000);
+      fTree->Branch(name, &var, TString(name).Append("/").Append(type).Data(), /*bufsize=32000*/128000);
     }
   }
 
@@ -43,7 +43,7 @@ public :
     if(fRead){
       fTree->SetBranchAddress(name, &varv);
     }else{
-      fTree->Branch(name, &varv, /*bufsize=32000*/1024000);
+      fTree->Branch(name, &varv, /*bufsize=32000*/128000);
     }
   }
 
