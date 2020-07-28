@@ -7,6 +7,8 @@ cmsrel CMSSW_10_6_14
 cd CMSSW_10_6_14/src
 cmsenv
 
+scram setup /cvmfs/cms.cern.ch/slc7_amd64_gcc820/cms/cmssw/CMSSW_11_1_2/config/toolbox/slc7_amd64_gcc820/tools/selected/json.xml
+
 git cms-merge-topic -u lathomas:PUPPIUpdate
 git cms-merge-topic -u hqucms:dev/particle-net-onnxrt-106x
 

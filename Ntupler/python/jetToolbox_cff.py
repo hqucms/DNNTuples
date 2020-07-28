@@ -262,7 +262,6 @@ def jetToolbox( proc, jetType, jetSequence, outputFile,
 			mod["PFJets"] = jetalgo+'PFJetsPuppi'+postFix
 			_addProcessAndTask( proc, mod["PFJets"],
 					ak4PFJetsPuppi.clone(src=cms.InputTag(srcForPFJets),
-						applyWeight = False,
 						doAreaFastjet = True,
 						rParam = jetSize,
 						jetAlgorithm = algorithm ) )

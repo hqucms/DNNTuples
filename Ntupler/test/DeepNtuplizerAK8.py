@@ -142,22 +142,6 @@ if useReclusteredJets:
     process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addTagInfos = cms.bool(True)
     process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addBTagInfo = cms.bool(True)
 
-    from RecoBTag.ONNXRuntime.pfDeepBoostedJetTags_cfi import pfDeepBoostedJetTags as _pfDeepBoostedJetTags
-    process.pfParticleNetJetTagsAK8WithPuppiDaughters = _pfDeepBoostedJetTags.clone(
-        src=process.pfParticleNetJetTagsAK8WithPuppiDaughters.src,
-        flav_names=process.pfParticleNetJetTagsAK8WithPuppiDaughters.flav_names,
-        preprocessParams=process.pfParticleNetJetTagsAK8WithPuppiDaughters.preprocessParams,
-        model_path='DeepNTuples/Ntupler/data/ParticleNet/ak8/ParticleNet.onnx',
-        )
-    process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters = _pfDeepBoostedJetTags.clone(
-        src=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.src,
-        flav_names=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.flav_names,
-        preprocessParams=process.pfMassDecorrelatedParticleNetJetTagsAK8WithPuppiDaughters.preprocessParams,
-        model_path='DeepNTuples/Ntupler/data/ParticleNet-MD/ak8/ParticleNetMD.onnx',
-        )
-
-
-
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
 else:
     updateJetCollection(
