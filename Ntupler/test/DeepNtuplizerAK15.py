@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 # ---------------------------------------------------------
+raise
 
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')

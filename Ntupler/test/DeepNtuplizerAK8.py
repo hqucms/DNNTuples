@@ -90,6 +90,10 @@ if era == 'Summer19UL17':
     # Add an ESPrefer to override JEC that might be available from the global tag
     process.es_prefer_jec = cms.ESPrefer('PoolDBESSource', 'jec')
 # ---------------------------------------------------------
+# Update to PuppiV14
+from CommonTools.PileupAlgos.customizePuppiTune_cff import UpdatePuppiTuneV14_MC
+UpdatePuppiTuneV14_MC(process)
+# ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
 from RecoBTag.MXNet.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
