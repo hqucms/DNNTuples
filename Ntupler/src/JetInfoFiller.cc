@@ -80,6 +80,9 @@ bool JetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& je
   data.fill<float>("jet_tightId", jetIdTight(jet));
   data.fill<float>("jet_tightIdLepVeto", jetIdTightLepVeto(jet));
 
+  // qgl
+  data.fill<float>("jet_qgl", jet.userFloat("qgl"));
+
   for(const auto& disc : btag_discriminators_) {
     std::string name(disc);
     std::replace(name.begin(), name.end(), ':', '_');
@@ -119,6 +122,8 @@ void JetInfoFiller::book() {
   // jet id
   data.add<float>("jet_tightId", 0);
   data.add<float>("jet_tightIdLepVeto", 0);
+
+  data.add<float>("jet_qgl", 0);
 
   for(auto name : btag_discriminators_) {
     std::replace(name.begin(), name.end(), ':', '_');
