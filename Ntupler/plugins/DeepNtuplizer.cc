@@ -38,6 +38,7 @@ private:
   virtual void endJob() override;
 
   double jetR = -1;
+  bool isPuppi = true;
 
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
   edm::EDGetTokenT<edm::View<reco::Candidate>> candToken_;
@@ -55,6 +56,7 @@ private:
 
 DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     jetR(iConfig.getParameter<double>("jetR")),
+    isPuppi(iConfig.getParameter<bool>("isPuppiJets")),
     jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
     candToken_(consumes<edm::View<reco::Candidate>>(iConfig.getParameter<edm::InputTag>("pfcands"))),
     genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch")))
@@ -106,7 +108,7 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     bool write_ = true;
 
     const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
-    JetHelper jet_helper(&jet, candHandle);
+    JetHelper jet_helper(&jet, candHandle, isPuppi);
     jet_helper.setGenjetWithNu((*genJetWithNuMatchHandle)[jets->refAt(idx)]);
 
     for (auto *m : modules_){

@@ -9,10 +9,11 @@
 
 namespace deepntuples {
 
-JetHelper::JetHelper(const pat::Jet* jet, const edm::Handle<reco::CandidateView> &pfcands) : jet_(jet) {
-  if (!jet) throw cms::Exception("[JetHelper::JetHelper] Null pointer for input jet!");
-  initializeConstituents(pfcands);
-}
+  JetHelper::JetHelper(const pat::Jet *jet, const edm::Handle<reco::CandidateView> &pfcands, bool isPuppi) : jet_(jet), isPuppi_(isPuppi) {
+    if (!jet)
+      throw cms::Exception("[JetHelper::JetHelper] Null pointer for input jet!");
+    initializeConstituents(pfcands);
+  }
 
 void JetHelper::initializeConstituents(const edm::Handle<reco::CandidateView> &pfcands) {
   daughters_.clear();
@@ -29,7 +30,7 @@ void JetHelper::initializeConstituents(const edm::Handle<reco::CandidateView> &p
       for (unsigned k=0; k<sj->numberOfDaughters(); ++k){
         const auto& candPtr = sj->daughterPtr(k);
         const auto *cand = dynamic_cast<const pat::PackedCandidate*>(&(*candPtr));
-        if (cand->puppiWeight() < 0.01) continue; // [94X] ignore particles w/ extremely low puppi weights
+        if (isPuppi_ && cand->puppiWeight() < 0.01) continue; // [94X] ignore particles w/ extremely low puppi weights
         // Here we get the original PackedCandidate as stored in MiniAOD (i.e., not puppi weighted)
         // https://github.com/cms-sw/cmssw/pull/28035
         daughters_.push_back(pfcands->ptrAt(dauPtr.key()));
@@ -39,7 +40,7 @@ void JetHelper::initializeConstituents(const edm::Handle<reco::CandidateView> &p
     }else{
       const auto& candPtr = dauPtr;
       const auto *cand = dynamic_cast<const pat::PackedCandidate*>(&(*candPtr));
-      if (cand->puppiWeight() < 0.01) continue; // [94X] ignore particles w/ extremely low puppi weights
+      if (isPuppi_ && cand->puppiWeight() < 0.01) continue; // [94X] ignore particles w/ extremely low puppi weights
       // Here we get the original PackedCandidate as stored in MiniAOD (i.e., not puppi weighted)
       // https://github.com/cms-sw/cmssw/pull/28035
       daughters_.push_back(pfcands->ptrAt(dauPtr.key()));

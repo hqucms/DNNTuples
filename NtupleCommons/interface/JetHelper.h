@@ -19,7 +19,7 @@ namespace deepntuples {
 class JetHelper {
 public:
   JetHelper() {}
-  JetHelper(const pat::Jet *jet, const edm::Handle<reco::CandidateView> &pfcands);
+  JetHelper(const pat::Jet *jet, const edm::Handle<reco::CandidateView> &pfcands, bool isPuppi=true);
 
   virtual ~JetHelper() {}
 
@@ -49,6 +49,7 @@ private:
 private:
   // data members
   const pat::Jet *jet_ = nullptr;
+  const bool isPuppi_ = true;
   const reco::GenJet *genjetWithNu_ = nullptr;
   std::vector<reco::CandidatePtr> daughters_;
   std::map<reco::CandidatePtr::key_type, float> puppi_wgt_cache_;

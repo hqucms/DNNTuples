@@ -24,6 +24,7 @@ globalTagMap = {
     'Summer19UL17': '106X_mc2017_realistic_v6',
     'Summer19UL18': '106X_upgrade2018_realistic_v11_L1v1',
     'Summer19UL16': '',
+    '106X_mc2017_realistic_v7': '106X_mc2017_realistic_v7',
 }
 
 era = None if options.inputDataset else 'Summer19UL17'
