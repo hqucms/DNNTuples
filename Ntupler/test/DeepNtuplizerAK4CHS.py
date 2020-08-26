@@ -117,7 +117,19 @@ updateJetCollection(
 )
 srcJets = cms.InputTag('selectedUpdatedPatJets')
 # ---------------------------------------------------------
-from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask, addToProcessAndTask
+from RecoJets.JetProducers.QGTagger_cfi import QGTagger
+process.qgtagger = QGTagger.clone(srcJets=srcJets, srcVertexCollection="offlineSlimmedPrimaryVertices")
+process.updatedJetsWithUserData = cms.EDProducer("PATJetUserDataEmbedder",
+    src=srcJets,
+    userFloats=cms.PSet(qgl=cms.InputTag('qgtagger:qgLikelihood')),
+    )
+srcJets = cms.InputTag('updatedJetsWithUserData')
+process.qgTask = cms.Task(
+    process.qgtagger,
+    process.updatedJetsWithUserData,
+)
+# ---------------------------------------------------------
+from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask
 patTask = getPatAlgosToolsTask(process)
 
 from RecoJets.JetProducers.ak4GenJets_cfi import ak4GenJets
@@ -161,3 +173,4 @@ if not options.inputDataset:
 process.p = cms.Path(process.deepntuplizer)
 process.p.associate(patTask)
 process.p.associate(process.genJetTask)
+process.p.associate(process.qgTask)
