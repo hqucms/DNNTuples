@@ -1,4 +1,4 @@
-# DNNTuplesAK8
+# DNNTuples for AK4 jets
 
 ## Setup
 ```
@@ -32,11 +32,11 @@ source /cvmfs/cms.cern.ch/common/crab-setup.sh
 
 **Step 1**: use the `crab.py` script to submit the CRAB jobs:
 
-`python crab.py --set-input-dataset -p ../test/DeepNtuplizerAK8.py --site T2_CH_CERN -o /store/user/$USER/DeepNtuples/[version] -t DeepNtuplesAK8-[version] --no-publication -i [ABC].conf -s FileBased -n 5 --work-area crab_projects_[ABC] --send-external [--input_files JEC.db] --dryrun`
+`python crab.py --set-input-dataset -p ../test/DeepNtuplizerAK4[CHS|Puppi].py --site T2_CH_CERN -o /store/user/$USER/DeepNtuples/[version] -t DeepNtuplesAK4-[version] --no-publication -i [ABC].conf -s FileBased -n 1 --work-area crab_projects_[ABC] --send-external [--input_files JEC.db] --dryrun`
 
 These command will perform a "dryrun" to print out the CRAB configuration files. Please check everything is correct (e.g., the output path, version number, requested number of cores, etc.) before submitting the actual jobs. To actually submit the jobs to CRAB, just remove the `--dryrun` option at the end.
 
-**[Note] For the QCD samples use `-n 1 --max-units 20` to run one file per job, and limit the total files per job to 20.**
+**[Note] For the QCD samples use `-n 1 --max-units 50` to run one file per job, and limit the total files per job to 50.**
 
 
 **Step 2**: check job status
