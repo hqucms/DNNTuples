@@ -22,7 +22,7 @@ globalTagMap = {
     'auto': 'auto:phase1_2021_realistic',
 }
 
-era = None if options.inputDataset else 'auto'
+era = 'auto'
 for k in globalTagMap:
     if k in options.inputDataset:
         era = k
