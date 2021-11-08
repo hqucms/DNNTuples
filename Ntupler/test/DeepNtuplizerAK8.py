@@ -19,12 +19,10 @@ options.register('isTrainSample', True, VarParsing.multiplicity.singleton, VarPa
 options.parseArguments()
 
 globalTagMap = {
-    'Summer19UL17': '106X_mc2017_realistic_v6',
-    'Summer19UL18': '106X_upgrade2018_realistic_v11_L1v1',
-    'Summer19UL16': '',
+    'auto': 'auto:phase1_2021_realistic',
 }
 
-era = None if options.inputDataset else 'Summer19UL17'
+era = None if options.inputDataset else 'auto'
 for k in globalTagMap:
     if k in options.inputDataset:
         era = k
@@ -61,44 +59,11 @@ from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, globalTagMap[era], '')
 print('Using global tag', process.GlobalTag.globaltag)
 # ---------------------------------------------------------
-# read JEC from sqlite
-if era == 'Summer19UL17':
-    import os
-    jecTag = 'Summer19UL17_V5_MC'
-    jecFile = '%s.db' % jecTag
-    if not os.path.exists(jecFile):
-        os.symlink('../data/'+jecFile, jecFile)
-    from CondCore.CondDB.CondDB_cfi import CondDB
-    CondDBJECFile = CondDB.clone(connect = cms.string( 'sqlite:%s'%jecFile ) )
-    process.jec = cms.ESSource('PoolDBESSource',
-        CondDBJECFile,
-        toGet = cms.VPSet(
-            cms.PSet(
-                record = cms.string('JetCorrectionsRecord'),
-                tag    = cms.string('JetCorrectorParametersCollection_%s_AK4PFchs' % jecTag),
-                label  = cms.untracked.string('AK4PFchs')
-            ),
-            cms.PSet(
-                record = cms.string('JetCorrectionsRecord'),
-                tag    = cms.string('JetCorrectorParametersCollection_%s_AK4PFPuppi' % jecTag),
-                label  = cms.untracked.string('AK4PFPuppi')
-            ),
-            # ...and so on for all jet types you need
-        )
-    )
-    print(jecTag, process.jec.toGet)
-    # Add an ESPrefer to override JEC that might be available from the global tag
-    process.es_prefer_jec = cms.ESPrefer('PoolDBESSource', 'jec')
-# ---------------------------------------------------------
-# Update to PuppiV14
-from CommonTools.PileupAlgos.customizePuppiTune_cff import UpdatePuppiTuneV14_MC
-UpdatePuppiTuneV14_MC(process)
-# ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
 from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
 
-useReclusteredJets = True
+useReclusteredJets = False
 jetR = 0.8
 
 bTagInfos = [

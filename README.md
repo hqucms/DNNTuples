@@ -2,29 +2,15 @@
 
 ## Setup
 ```
-# use CMSSW_10_6_14
-cmsrel CMSSW_10_6_14
-cd CMSSW_10_6_14/src
+# use CMSSW_11_2_1_Patatrack
+cmsrel CMSSW_11_2_1_Patatrack
+cd CMSSW_11_2_1_Patatrack/src
 cmsenv
 
-scram setup /cvmfs/cms.cern.ch/slc7_amd64_gcc820/cms/cmssw/CMSSW_11_1_2/config/toolbox/slc7_amd64_gcc820/tools/selected/json.xml
-
-git cms-merge-topic -u lathomas:PUPPIUpdate
-git cms-merge-topic -u hqucms:dev/particle-net-onnxrt-106x
-
-git cms-addpkg PhysicsTools/ONNXRuntime
-
 # clone this repo into "DeepNTuples" directory
-git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/UL/10_6_X
-
-# Use a faster version of ONNXRuntime
-$CMSSW_BASE/src/DeepNTuples/Ntupler/scripts/install_onnxruntime.sh
+git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/scouting/11_2_X
 
 scram b -j8
-
-# install the data files
-git clone git@github.com:hqucms/RecoBTag-Combined.git -b ParticleNet-V01-Full.rc2-MD.rc6 $CMSSW_BASE/external/$SCRAM_ARCH/data/RecoBTag/Combined/data
-
 ```
 
 ## Submit jobs via CRAB
