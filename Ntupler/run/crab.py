@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from six.moves import input
 
 import argparse
 import subprocess
@@ -38,7 +39,7 @@ def natural_sort(l):
 def _confirm(prompt, silent_mode=False):
     if silent_mode:
         return True
-    ans = raw_input('%s [yn] ' % prompt)
+    ans = input('%s [yn] ' % prompt)
     if ans.lower()[0] == 'y':
         return True
     else:
@@ -57,10 +58,17 @@ def runCrabCommand(command, *args, **kwargs):
         logger.error(getattr(e, 'message', repr(e)))
 
 
+def formatOutputDir(outputdir):
+    outputdir = outputdir[outputdir.find('/store'):]
+    if '/store/cmst3' in outputdir:
+        outputdir = outputdir.replace('/store/cmst3', '/store/group/cmst3')
+    return outputdir
+
+
 def parseDatasetName(dataset):
     procname, ver, tier = dataset[1:].split('/')
     ext = ''
-    isMC = tier.endswith('SIM')
+    isMC = not re.match(r'Run20[0-9][0-9][A-Z]-', ver)
     if isMC:
         ver_pieces = ver.split('_')
         keep_idx = 1
@@ -166,7 +174,7 @@ def createConfig(args, dataset):
     if len(args.input_files) > 0:
         config.JobType.inputFiles = args.input_files
 
-    config.Data.inputDBS = 'global'
+    config.Data.inputDBS = 'phys03' if '/USER' in dataset else 'global'
     config.Data.inputDataset = dataset
     config.Data.splitting = args.splitting
     config.Data.unitsPerJob = args.units_per_job
@@ -176,7 +184,7 @@ def createConfig(args, dataset):
         config.Data.publication = False
     config.Data.outputDatasetTag = args.tag + '_' + vername
     config.Data.allowNonValidInputDataset = True
-    config.Data.outLFNDirBase = args.outputdir
+    config.Data.outLFNDirBase = formatOutputDir(args.outputdir)
 
     if not isMC and args.json:
         config.Data.lumiMask = args.json
@@ -358,13 +366,13 @@ def status(args):
                 job_status[dirname] = '\033[1;101mUNKNOWN\033[0m'
                 continue
             try:
-                percent_finished = 100.*states['finished'] / sum(states.values())
+                percent_finished = 100. * states['finished'] / sum(states.values())
             except KeyError:
                 percent_finished = 0
             pcts_str = ' (\033[1;%dm%.1f%%\033[0m)' % (32 if percent_finished > 90 else 34 if percent_finished > 70 else 35 if percent_finished > 50 else 31, percent_finished)
             job_status[dirname] = ret['status'] + pcts_str + '\n    ' + str(states)
             if ret['publicationEnabled']:
-                pcts_published = 100.* ret['publication'].get('done', 0) / max(sum(states.values()), 1)
+                pcts_published = 100. * ret['publication'].get('done', 0) / max(sum(states.values()), 1)
                 pub_pcts_str = '\033[1;%dm%.1f%%\033[0m' % (32 if pcts_published > 90 else 34 if pcts_published > 70 else 35 if pcts_published > 50 else 31, pcts_published)
                 job_status[dirname] = job_status[dirname] + '\n    publication: ' + pub_pcts_str + ' ' + str(ret['publication'])
                 if ret['status'] == 'COMPLETED' and pcts_published != 100:
@@ -424,7 +432,7 @@ def status(args):
 
 
         logger.info('====== Summary (%s) ======\n' % (work_area) +
-                     '\n'.join(['%s: %s' % (k, job_status[k]) for k in natural_sort(job_status.keys())]))
+                    '\n'.join(['%s: %s' % (k, job_status[k]) for k in natural_sort(job_status.keys())]))
         logger.info('%d/%d jobs completed!' % (finished, len(jobnames)))
         if len(submit_failed):
             logger.warning('Submit failed:\n%s' % '\n'.join(submit_failed))
@@ -605,7 +613,7 @@ def main():
             l = l.strip()
             if not l or l.startswith('#'):
                 continue
-            dataset = [s for s in l.split() if '/MINIAOD' in s][0]
+            dataset = [s for s in l.split() if '/MINIAOD' in s or '/USER' in s][0]
             cfg, cfgpath = createConfig(args, dataset)
             if cfg.General.requestName in request_names:
                 request_names[cfg.General.requestName].append(dataset)
@@ -625,7 +633,7 @@ def main():
 
     if len(submit_failed):
         logger.warning('Submit failed:\n%s' % '\n'.join(submit_failed))
-    duplicate_names = {name:request_names[name] for name in request_names if len(request_names[name])>1}
+    duplicate_names = {name: request_names[name] for name in request_names if len(request_names[name]) > 1}
     if len(duplicate_names):
         logger.warning('Dataset with the same request names:\n%s' % str(duplicate_names))
 
