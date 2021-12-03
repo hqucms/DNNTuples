@@ -16,8 +16,8 @@
 
 #include "DeepNTuples/NtupleCommons/interface/TreeWriter.h"
 
-#include "DeepNTuples/Ntupler/interface/JetInfoFiller.h"
-#include "DeepNTuples/Ntupler/interface/FatJetInfoFiller.h"
+//#include "DeepNTuples/Ntupler/interface/JetInfoFiller.h"
+//#include "DeepNTuples/Ntupler/interface/FatJetInfoFiller.h"
 #include "DeepNTuples/Ntupler/interface/SVFiller.h"
 #include "DeepNTuples/Ntupler/interface/PFCompleteFiller.h"
 
@@ -43,6 +43,8 @@ private:
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
   edm::EDGetTokenT<edm::View<reco::Candidate>> candToken_;
   edm::EDGetTokenT<edm::Association<reco::GenJetCollection>> genJetWithNuMatchToken_;
+  // NEW:
+  edm::EDGetTokenT<reco::VertexCompositePtrCandidateCollection> svToken_;
 
   edm::Service<TFileService> fs;
   TreeWriter *treeWriter = nullptr;
@@ -59,15 +61,17 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     isPuppi(iConfig.getParameter<bool>("isPuppiJets")),
     jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
     candToken_(consumes<edm::View<reco::Candidate>>(iConfig.getParameter<edm::InputTag>("pfcands"))),
-    genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch")))
+    genJetWithNuMatchToken_(consumes<edm::Association<reco::GenJetCollection>>(iConfig.getParameter<edm::InputTag>("genJetsMatch"))),
+    svToken_(consumes<reco::VertexCompositePtrCandidateCollection>(iConfig.getParameter<edm::InputTag>("SVs")))
 {
 
   // register modules
-  JetInfoFiller *jetinfo = new JetInfoFiller("", jetR);
-  addModule(jetinfo);
+  // OLD - not needed for latest ntupler
+  //JetInfoFiller *jetinfo = new JetInfoFiller("", jetR);
+  //addModule(jetinfo);
 
-  FatJetInfoFiller *fjinfo = new FatJetInfoFiller("", jetR);
-  addModule(fjinfo);
+  //FatJetInfoFiller *fjinfo = new FatJetInfoFiller("", jetR);
+  //addModule(fjinfo);
 
   SVFiller *sv = new SVFiller("", jetR);
   addModule(sv);
@@ -104,19 +108,28 @@ void DeepNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   edm::Handle<edm::Association<reco::GenJetCollection>> genJetWithNuMatchHandle;
   iEvent.getByToken(genJetWithNuMatchToken_, genJetWithNuMatchHandle);
 
-  for (unsigned idx=0; idx<jets->size(); ++idx){
+  // NEW
+  edm::Handle<reco::VertexCompositePtrCandidateCollection> SVs;
+  iEvent.getByToken(svToken_, SVs);
+
+  // NEW:  Loop over SVs instead of jets
+  //for (unsigned idx=0; idx<jets->size(); ++idx){
+  for (unsigned idx=0; idx<SVs->size(); ++idx) {
     bool write_ = true;
 
-    const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
-    JetHelper jet_helper(&jet, candHandle, isPuppi);
-    jet_helper.setGenjetWithNu((*genJetWithNuMatchHandle)[jets->refAt(idx)]);
+    const auto& sv = SVs->at(idx);
+    //const auto& jet = jets->at(idx); // need to keep the JEC for puppi sdmass corr
+    //JetHelper jet_helper(&jet, candHandle, isPuppi);
+    //jet_helper.setGenjetWithNu((*genJetWithNuMatchHandle)[jets->refAt(idx)]);
 
     for (auto *m : modules_){
-      if (!m->fillBranches(jet.correctedJet("Uncorrected"), idx, jet_helper)){
+      //if (!m->fillBranches(jet.correctedJet("Uncorrected"), idx, jet_helper)){
+      if (!m->fillBranches(sv, idx, candHandle)) {
         write_ = false;
         break;
       }
     }
+    
 
     if (write_) {
       treeWriter->fill();

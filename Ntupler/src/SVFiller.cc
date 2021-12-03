@@ -56,8 +56,12 @@ void SVFiller::book() {
 
 }
 
-bool SVFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
+//bool SVFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
+bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> candHandle){
+  //match svs to candHandles
 
+
+  /*
   std::vector<const reco::VertexCompositePtrCandidate*> jetSVs;
   for (const auto &sv : *SVs){
     if (reco::deltaR(sv, jet) < jetR_) {
@@ -70,47 +74,55 @@ bool SVFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_hel
   std::sort(jetSVs.begin(), jetSVs.end(), [&](const reco::VertexCompositePtrCandidate *sv1, const reco::VertexCompositePtrCandidate *sv2){
     return vertexDxy(*sv1, pv).significance() > vertexDxy(*sv2, pv).significance();
   });
+  */
+  const auto &pv = vertices->at(0);
 
+  for (unsigned idx=0; idx<candHandle->size(); ++idx) {
+    const auto& cand = candHandle->at(idx);
+    const auto *packed_cand = dynamic_cast<const pat::PackedCandidate *>(&cand);  //(&(*cand));
 
-  data.fill<int>("n_sv", jetSVs.size());
-  data.fill<float>("nsv", jetSVs.size());
+    double dr = reco::deltaR(*packed_cand, sv); // was *sv
+    if (dr < jetR_) {
 
-  float etasign = jet.eta()>0 ? 1 : -1;
-
-  for (const auto *sv : jetSVs){
-    // basic kinematics
-    data.fillMulti<float>("sv_ptrel", sv->pt() / jet.pt());
-    data.fillMulti<float>("sv_erel", sv->energy() / jet.energy());
-    data.fillMulti<float>("sv_phirel", reco::deltaPhi(*sv, jet));
-    data.fillMulti<float>("sv_etarel", etasign * (sv->eta() - jet.eta()));
-    data.fillMulti<float>("sv_deltaR", reco::deltaR(*sv, jet));
-    data.fillMulti<float>("sv_pt", sv->pt());
-    data.fillMulti<float>("sv_abseta", std::abs(sv->eta()));
-    data.fillMulti<float>("sv_mass", sv->mass());
-
-    data.fillMulti<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
-    data.fillMulti<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
-    data.fillMulti<float>("sv_pt_log", catchInfs(std::log(sv->pt()), -99));
-    data.fillMulti<float>("sv_e_log", catchInfs(std::log(sv->energy()), -99));
-
-    // sv properties
-    data.fillMulti<float>("sv_ntracks", sv->numberOfDaughters());
-    data.fillMulti<float>("sv_chi2", sv->vertexChi2());
-    data.fillMulti<float>("sv_ndf", sv->vertexNdof());
-    data.fillMulti<float>("sv_normchi2", catchInfs(sv->vertexNormalizedChi2()));
-
-    const auto &dxy = vertexDxy(*sv, pv);
-    data.fillMulti<float>("sv_dxy", dxy.value());
-    data.fillMulti<float>("sv_dxyerr", dxy.error());
-    data.fillMulti<float>("sv_dxysig", dxy.significance());
-
-    const auto &d3d = vertexD3d(*sv, pv);
-    data.fillMulti<float>("sv_d3d", d3d.value());
-    data.fillMulti<float>("sv_d3derr", d3d.error());
-    data.fillMulti<float>("sv_d3dsig", d3d.significance());
-    data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(*sv, pv));
+      //data.fill<int>("n_sv", jetSVs.size());
+      //data.fill<float>("nsv", jetSVs.size());
+    
+      //float etasign = jet.eta()>0 ? 1 : -1;
+    
+      //for (const auto *sv : jetSVs){
+      // basic kinematics
+      //data.fillMulti<float>("sv_ptrel", sv->pt() / jet.pt());
+      //data.fillMulti<float>("sv_erel", sv->energy() / jet.energy());
+      //data.fillMulti<float>("sv_phirel", reco::deltaPhi(*sv, jet));
+      //data.fillMulti<float>("sv_etarel", etasign * (sv->eta() - jet.eta()));
+      //data.fillMulti<float>("sv_deltaR", reco::deltaR(*sv, jet));
+      data.fillMulti<float>("sv_pt", sv.pt());
+      data.fillMulti<float>("sv_abseta", std::abs(sv.eta()));
+      data.fillMulti<float>("sv_mass", sv.mass());
+    
+      //data.fillMulti<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
+      //data.fillMulti<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
+      data.fillMulti<float>("sv_pt_log", catchInfs(std::log(sv.pt()), -99));
+      data.fillMulti<float>("sv_e_log", catchInfs(std::log(sv.energy()), -99));
+    
+      // sv properties
+      data.fillMulti<float>("sv_ntracks", sv.numberOfDaughters());
+      data.fillMulti<float>("sv_chi2", sv.vertexChi2());
+      data.fillMulti<float>("sv_ndf", sv.vertexNdof());
+      data.fillMulti<float>("sv_normchi2", catchInfs(sv.vertexNormalizedChi2()));
+    
+      const auto &dxy = vertexDxy(sv, pv);
+      data.fillMulti<float>("sv_dxy", dxy.value());
+      data.fillMulti<float>("sv_dxyerr", dxy.error());
+      data.fillMulti<float>("sv_dxysig", dxy.significance());
+    
+      const auto &d3d = vertexD3d(sv, pv);
+      data.fillMulti<float>("sv_d3d", d3d.value());
+      data.fillMulti<float>("sv_d3derr", d3d.error());
+      data.fillMulti<float>("sv_d3dsig", d3d.significance());
+      data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
+      }
   }
-
   return true;
 }
 

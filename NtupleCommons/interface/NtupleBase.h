@@ -47,9 +47,14 @@ public:
   }
 
   // fill the branches
-  bool fillBranches(const pat::Jet &jet, size_t jetidx, const JetHelper &jet_helper) {
+  //bool fillBranches(const pat::Jet &jet, size_t jetidx, const JetHelper &jet_helper) {
+  //  data.reset();
+  //  return fill(jet, jetidx, jet_helper);
+  //}
+  // NEW:
+  bool fillBranches(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> candHandle) {
     data.reset();
-    return fill(jet, jetidx, jet_helper);
+    return fill(sv, svidx, candHandle);
   }
 
   // return tree data for reading
@@ -59,7 +64,9 @@ protected:
   // declare the data branches (name, type, default values)
   virtual void book() = 0;
   // fill the data branches to the tree
-  virtual bool fill(const pat::Jet &jet, size_t jetidx, const JetHelper &jet_helper) = 0;
+  //virtual bool fill(const pat::Jet &jet, size_t jetidx, const JetHelper &jet_helper) = 0;
+  // NEW:
+  virtual bool fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> candHandle) = 0;
 
 protected:
   std::string branchName_;
