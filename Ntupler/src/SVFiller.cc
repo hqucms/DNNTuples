@@ -11,14 +11,218 @@
 
 namespace deepntuples {
 
+
+
+// TEMPORARY, debugging only
+void printGenInfoHeader() {
+  using namespace std;
+  cout    << right << setw(6) << "#" << " " << setw(10) << "pdgId"
+      << "  " << "Chg" << "  " << setw(10) << "Mass" << "  " << setw(48) << " Momentum"
+      << left << "  " << setw(10) << "Mothers" << " " << setw(30) << "Daughters" << endl;
+}
+
+void printGenParticleInfo(const reco::GenParticle* genParticle, const int idx) {
+  using namespace std;
+  cout  << right << setw(3) << genParticle->status();
+  cout  << right << setw(3) << idx << " " << setw(10) << genParticle->pdgId() << "  ";
+  cout  << right << "  " << setw(3) << genParticle->charge() << "  " << TString::Format("%10.3g", genParticle->mass() < 1e-5 ? 0 : genParticle->mass());
+  cout  << left << setw(50) << TString::Format("  (E=%6.4g pT=%6.4g eta=%7.3g phi=%7.3g)", genParticle->energy(), genParticle->pt(), genParticle->eta(), genParticle->phi());
+
+  TString                     mothers;
+  for (unsigned int iMom = 0; iMom < genParticle->numberOfMothers(); ++iMom) {
+    if (mothers.Length())     mothers        += ",";
+    mothers   += genParticle->motherRef(iMom).key();
+  }
+  cout << "  " << setw(10) << mothers;
+  TString                     daughters;
+  for (unsigned int iDau = 0; iDau < genParticle->numberOfDaughters(); ++iDau) {
+    if (daughters.Length())   daughters      += ",";
+    daughters += genParticle->daughterRef(iDau).key();
+  }
+  cout << " " << setw(30) << daughters << endl;
+}
+
+
+
+
+int hadronFlavorID(int id) {
+  if ((std::abs(id) > 400 && std::abs(id) < 500) || (std::abs(id) > 4000 && std::abs(id) < 5000)) {
+    return 4;
+  } else if ((std::abs(id) > 500 && std::abs(id) < 600) || (std::abs(id) > 5000 && std::abs(id) < 6000)) {
+    return 5;
+  } else {
+    return -1;
+  }
+}
+
+int hadronFlavor(const reco::GenParticle gp) { // was GenParticle* gp
+  int id = hadronFlavorID(gp.pdgId());
+  if (id == 4) { // c -- may be b->c
+    reco::GenParticle const* gp_ = &gp;
+    while (gp_->numberOfMothers() == 1) {
+      if (hadronFlavorID(gp_->pdgId()) == 5) return 10;
+      gp_ = (reco::GenParticle*)(gp_->mother());
+    }
+  }
+  return id;
+}
+
+
 void SVFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
   svToken_ = cc.consumes<reco::VertexCompositePtrCandidateCollection>(iConfig.getParameter<edm::InputTag>("SVs"));
+  // NEW - add additional collections for matching
+  //jetToken_ = cc.consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("jets"));
+  jetToken_ = cc.consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"));
+  genParticlesToken_ = cc.consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
 }
 
 void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+  //std::cout << "In readEvent" <<std::endl;
   iEvent.getByToken(vtxToken_, vertices);
   iEvent.getByToken(svToken_, SVs);
+  iEvent.getByToken(jetToken_, jets);
+  iEvent.getByToken(genParticlesToken_, particles);
+
+  std::cout << "TEMP:  PRINT GEN PARTICLE INFO" << std::endl;
+  printGenInfoHeader();
+  for (unsigned ipart = 0; ipart<particles->size(); ++ipart){
+    printGenParticleInfo(&(particles->at(ipart)), ipart);
+  }
+  std::cout << "DONE, now tracking" << std::endl;
+  
+
+
+  // NEW:  Perform matching here!
+  // (Can't do in DeepNtuplizer bc can't pass results; can't do in fill() bc need all SVs)
+  // Note:  sv results can be stored as an array; SV order should not change
+  matchedIDs = new int[SVs->size()];  // NOTE:  idxsv should give you the nth entry of matchedIDs
+
+  //check num of good jets
+  int n_good_jets = 0;
+  for (unsigned j=0; j<jets->size(); j++) {
+    const auto& jet = jets->at(j);
+    if (  (jet.pt() > 40)
+       && (std::abs(jet.eta()) < 2.5)
+       && (jet.hadronFlavour() & 4) ) {
+      n_good_jets++;
+    }
+  }
+  std::cout << "Found " << n_good_jets << " good jets" << std::endl;
+  // if sv close to a jet, assign ID of -1 and ignore it
+  int jet_free_svs = 0;
+  for (unsigned i=0; i<SVs->size(); i++) {
+    const auto& sv = SVs->at(i);
+    matchedIDs[i] = -999;  // initialize
+    for (unsigned j=0; j<jets->size(); j++) {
+      const auto& jet = jets->at(j);
+      if (  (reco::deltaR(jet, sv) < 0.4)
+         && (jet.pt() > 40)
+         && (std::abs(jet.eta()) < 2.5)
+         && (jet.hadronFlavour() & 4) ) {  // not 100% sure whether this is correct
+         //&& (jet.jetID() & 4) ) {  // don't know how to add this...
+        matchedIDs[i] = -1;  // ignore
+      }
+    }
+    if (matchedIDs[i] == -999) jet_free_svs += 1;
+  }
+  std::cout << "Found jet-free SVs: " << jet_free_svs << std::endl;
+  // - create c, b, b->c hadron lists...probably not necessary
+  /*
+  std::vector<const reco::GenParticle&> cHadrons;
+  std::vector<const reco::GenParticle&> bHadrons;
+  std::vector<const reco::GenParticle&> bcHadrons;
+  for (unsigned ipart = 0; ipart<particles->size(); ++ipart) {
+    const auto& gp = particles->at(ipart);
+    int pdgID = hadronFlavor(gp);
+    if (pdgID==4)  cHadrons.push_back(gp);
+    if (pdgID==5)  bHadrons.push_back(gp);
+    if (pdgID==10) bcHadrons.push_back(gp);
+  }*/
+
+  // - create full list of (sv, hadr pairs); dr-sorted
+  //std::cout << "EVENT" <<std::endl;
+  //std::cout << "Found " << SVs->size() << " SVs, " << particles->size() << " particles" << std::endl;
+  //std::cout << "...and " << jet_free_svs << " SVs far from jets" << std::endl;
+  std::vector<std::tuple<float, unsigned, unsigned>> pairList; // sv num, had num
+  for (unsigned i=0; i<SVs->size(); i++) {
+    const auto& sv = SVs->at(i);
+    if (matchedIDs[i] == -1) continue; // if sv is near a jet, skip it
+    std::cout << "found sv " << i << std::endl;
+    for (unsigned j=0; j<particles->size(); j++) {
+      const auto& gp = particles->at(j);
+      //if (hadronFlavor(gp) > 0) std::cout << "   hadr flav: " << hadronFlavor(gp) << ", dr=" << reco::deltaR(gp, sv) << std::endl;
+      if (!gp.statusFlags().isLastCopy()) continue;
+      if ((hadronFlavor(gp) == 4 || hadronFlavor(gp) == 5 || hadronFlavor(gp) == 10)
+          && reco::deltaR(gp, sv) < 0.4) {
+        std::cout << "   MATCHED SV " << i << " to particle " << j <<", flav=" << hadronFlavor(gp) << std::endl;
+        pairList.push_back(std::tuple<float, int, int>(deltaR(gp, sv), i, j));
+      }
+    }
+  }
+  std::sort(pairList.begin(), pairList.end(),
+    [](const std::tuple<float, unsigned, unsigned> & a, const std::tuple<float, unsigned, unsigned> & b) -> bool 
+    {return std::get<0>(a) < std::get<0>(b);}  // NOTE:  Flipped direction of <!  May have been wrong before...
+    );
+  std::cout << "pairList size is " << pairList.size() << std::endl;
+
+  // - take lowest-sep pair and match; remove sv AND hadr from consideration
+  std::cout << "Assigning lowest-sep pairs" << std::endl;
+  while (pairList.size() > 0) {
+    // pair witih lowest dR:
+    std::tuple<float, unsigned, unsigned> sel_tuple = pairList[0];
+    const auto& gp = particles->at(std::get<2>(sel_tuple));
+    matchedIDs[std::get<1>(sel_tuple)] = hadronFlavor(gp); // matchedIDs[sv#] = gen hadron ID
+    std::cout << "  ASSIGNED SV " << std::get<1>(sel_tuple) << " to part " << std::get<2>(sel_tuple) << ", hadr type=" << hadronFlavor(gp) << std::endl;
+    // remove all occurences of this sv, hadron
+    for (unsigned i = 0; i < pairList.size(); i++) { // loop through each element of pairList, check for removal
+      if (std::get<1>(pairList[i]) == std::get<1>(sel_tuple) || std::get<2>(pairList[i]) == std::get<2>(sel_tuple)) {
+        pairList.erase(pairList.begin()+i);
+      }
+    }
+  }
+  std::cout << "Finished removing" << std::endl;
+
+  // - find lights in unmatched SVs (if dR>0.8 for all hadr)
+  std::vector<std::tuple<float, unsigned, unsigned>> pairList_; // sv num, had num
+  for (unsigned i=0; i<SVs->size(); i++) {
+    const auto& sv = SVs->at(i);
+    bool isLight = true;
+    if (matchedIDs[i] == -1) continue; // if sv is near a jet, skip it
+    for (unsigned j=0; j<particles->size(); j++) {
+      const auto& gp = particles->at(j);
+      if ((hadronFlavor(gp) == 4 || hadronFlavor(gp) == 5 || hadronFlavor(gp) == 10)
+          && reco::deltaR(gp, sv) < 0.8) {
+        //pairList_.push_back(std::tuple<float, unsigned, unsigned>(deltaR(gp, sv), i, j));
+        isLight = false;
+      }
+    }
+    if (isLight) matchedIDs[i] = 0;
+  }
+  /*
+  //std::cout << "Finalizing matching" << std::endl;
+  std::cout << "pairList_ size is " << pairList_.size() << std::endl;
+  for (unsigned i=0; i<SVs->size(); i++) {
+    // if SV not found in pairList, call it a light
+    bool isLight = true;
+    for (unsigned j=0; j<pairList_.size(); j++) {
+      std::tuple<float, unsigned, unsigned> sel_tuple = pairList_[j];
+      if (std::get<1>(sel_tuple) == i) isLight = false;
+    }
+    if (isLight) matchedIDs[i] = 0;
+  }
+  */
+
+  //finally, move -999s to -1s (now okay to ignore these)
+  for (unsigned i = 0; i<SVs->size(); i++) {
+    if (matchedIDs[i] == -999) matchedIDs[i] = -1;
+  }
+  /*std::cout << "Matching results: [" << std::endl;
+  for (unsigned i=0; i<SVs->size(); i++) {
+    std::cout << matchedIDs[i] << ", ";
+  }
+  std::cout << "]\n\n";*/
+  //std::cout << "Leaving readevent" << std::endl;
 }
 
 void SVFiller::book() {
@@ -54,6 +258,9 @@ void SVFiller::book() {
   data.addMulti<float>("sv_d3dsig");
   data.addMulti<float>("sv_costhetasvpv");
 
+  // NEW
+  data.addMulti<float>("sv_gen_flavor");
+
 }
 
 //bool SVFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
@@ -61,68 +268,37 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   //match svs to candHandles
 
 
-  /*
-  std::vector<const reco::VertexCompositePtrCandidate*> jetSVs;
-  for (const auto &sv : *SVs){
-    if (reco::deltaR(sv, jet) < jetR_) {
-      jetSVs.push_back(&sv);
-    }
-  }
-
-  // sort by dxy significance
-  const auto &pv = vertices->at(0);
-  std::sort(jetSVs.begin(), jetSVs.end(), [&](const reco::VertexCompositePtrCandidate *sv1, const reco::VertexCompositePtrCandidate *sv2){
-    return vertexDxy(*sv1, pv).significance() > vertexDxy(*sv2, pv).significance();
-  });
-  */
   const auto &pv = vertices->at(0);
 
-  for (unsigned idx=0; idx<candHandle->size(); ++idx) {
-    const auto& cand = candHandle->at(idx);
-    const auto *packed_cand = dynamic_cast<const pat::PackedCandidate *>(&cand);  //(&(*cand));
 
-    double dr = reco::deltaR(*packed_cand, sv); // was *sv
-    if (dr < jetR_) {
+  data.fillMulti<float>("sv_gen_flavor", matchedIDs[svidx]);
 
-      //data.fill<int>("n_sv", jetSVs.size());
-      //data.fill<float>("nsv", jetSVs.size());
+  data.fillMulti<float>("sv_pt", sv.pt());
+  data.fillMulti<float>("sv_abseta", std::abs(sv.eta()));
+  data.fillMulti<float>("sv_mass", sv.mass());
     
-      //float etasign = jet.eta()>0 ? 1 : -1;
+  //data.fillMulti<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
+  //data.fillMulti<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
+  data.fillMulti<float>("sv_pt_log", catchInfs(std::log(sv.pt()), -99));
+  data.fillMulti<float>("sv_e_log", catchInfs(std::log(sv.energy()), -99));
     
-      //for (const auto *sv : jetSVs){
-      // basic kinematics
-      //data.fillMulti<float>("sv_ptrel", sv->pt() / jet.pt());
-      //data.fillMulti<float>("sv_erel", sv->energy() / jet.energy());
-      //data.fillMulti<float>("sv_phirel", reco::deltaPhi(*sv, jet));
-      //data.fillMulti<float>("sv_etarel", etasign * (sv->eta() - jet.eta()));
-      //data.fillMulti<float>("sv_deltaR", reco::deltaR(*sv, jet));
-      data.fillMulti<float>("sv_pt", sv.pt());
-      data.fillMulti<float>("sv_abseta", std::abs(sv.eta()));
-      data.fillMulti<float>("sv_mass", sv.mass());
+  // sv properties
+  data.fillMulti<float>("sv_ntracks", sv.numberOfDaughters());
+  data.fillMulti<float>("sv_chi2", sv.vertexChi2());
+  data.fillMulti<float>("sv_ndf", sv.vertexNdof());
+  data.fillMulti<float>("sv_normchi2", catchInfs(sv.vertexNormalizedChi2()));
     
-      //data.fillMulti<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
-      //data.fillMulti<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
-      data.fillMulti<float>("sv_pt_log", catchInfs(std::log(sv.pt()), -99));
-      data.fillMulti<float>("sv_e_log", catchInfs(std::log(sv.energy()), -99));
+  const auto &dxy = vertexDxy(sv, pv);
+  data.fillMulti<float>("sv_dxy", dxy.value());
+  data.fillMulti<float>("sv_dxyerr", dxy.error());
+  data.fillMulti<float>("sv_dxysig", dxy.significance());
     
-      // sv properties
-      data.fillMulti<float>("sv_ntracks", sv.numberOfDaughters());
-      data.fillMulti<float>("sv_chi2", sv.vertexChi2());
-      data.fillMulti<float>("sv_ndf", sv.vertexNdof());
-      data.fillMulti<float>("sv_normchi2", catchInfs(sv.vertexNormalizedChi2()));
-    
-      const auto &dxy = vertexDxy(sv, pv);
-      data.fillMulti<float>("sv_dxy", dxy.value());
-      data.fillMulti<float>("sv_dxyerr", dxy.error());
-      data.fillMulti<float>("sv_dxysig", dxy.significance());
-    
-      const auto &d3d = vertexD3d(sv, pv);
-      data.fillMulti<float>("sv_d3d", d3d.value());
-      data.fillMulti<float>("sv_d3derr", d3d.error());
-      data.fillMulti<float>("sv_d3dsig", d3d.significance());
-      data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
-      }
-  }
+  const auto &d3d = vertexD3d(sv, pv);
+  data.fillMulti<float>("sv_d3d", d3d.value());
+  data.fillMulti<float>("sv_d3derr", d3d.error());
+  data.fillMulti<float>("sv_d3dsig", d3d.significance());
+  data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
+
   return true;
 }
 
@@ -146,7 +322,6 @@ float SVFiller::vertexDdotP(const reco::VertexCompositePtrCandidate &sv, const r
     reco::Candidate::Vector d(sv.vx() - pv.x(), sv.vy() - pv.y(), sv.vz() - pv.z());
     return p.Unit().Dot(d.Unit());
 }
-
 
 
 } /* namespace deepntuples */

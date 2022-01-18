@@ -35,9 +35,17 @@ protected:
 private:
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::EDGetTokenT<reco::VertexCompositePtrCandidateCollection> svToken_;
+  edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
+  //edm::EDGetTokenT<reco::GenJetCollection> jetToken_;
+  edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
 
   edm::Handle<reco::VertexCollection> vertices;
   edm::Handle<reco::VertexCompositePtrCandidateCollection> SVs;
+  // NEW, matching
+  edm::Handle<edm::View<pat::Jet>> jets;  //<reco::GenJetCollection> jets;
+  edm::Handle<reco::GenParticleCollection> particles;
+
+  int *matchedIDs; //array of all gen labels in the event
 
 private:
   static Measurement1D vertexDxy(const reco::VertexCompositePtrCandidate &svcand, const reco::Vertex &pv);

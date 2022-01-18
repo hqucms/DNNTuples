@@ -81,12 +81,12 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("pfcand_dlambdadz");
 
   // track btag info
-  // data.addMulti<float>("pfcand_btagMomentum");
-  // data.addMulti<float>("pfcand_btagEta");
+  data.addMulti<float>("pfcand_btagMomentum"); // was commented
+  data.addMulti<float>("pfcand_btagEta");  // wc
   data.addMulti<float>("pfcand_btagEtaRel");
   data.addMulti<float>("pfcand_btagPtRel");
-  // data.addMulti<float>("pfcand_btagPPar");
-  // data.addMulti<float>("pfcand_btagDeltaR");
+  data.addMulti<float>("pfcand_btagPPar");  //wc
+  data.addMulti<float>("pfcand_btagDeltaR");  //wc
   data.addMulti<float>("pfcand_btagPtRatio");
   data.addMulti<float>("pfcand_btagPParRatio");
   data.addMulti<float>("pfcand_btagSip2dVal");
@@ -143,10 +143,11 @@ bool PFCompleteFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t 
       data.fillMulti<float>("pfcand_isGamma", std::abs(packed_cand->pdgId())==22);
       data.fillMulti<float>("pfcand_isNeutralHad", std::abs(packed_cand->pdgId())==130);
   
-      /*
+
+      // *BELOW:*  Switchin packed_cand (ptr) -> SV (not ptr) where possible
       // for neutral
       float hcal_fraction = 0.;
-      if (packed_cand->pdgId() == 1 || packed_cand->pdgId() == 130) {
+      if (sv.pdgId() == 1 || sv.pdgId() == 130) {
         hcal_fraction = packed_cand->hcalFraction();
       } else if (packed_cand->isIsolatedChargedHadron()) {
         hcal_fraction = packed_cand->rawHcalFraction();
@@ -203,14 +204,15 @@ bool PFCompleteFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t 
   
       // build track info map
       TrackInfoBuilder trkinfo;
-      trkinfo.buildTrackInfo(builder_, *packed_cand, jet, vertices->at(0));
+      // NEW:  Was (builder_, *packed_cand, jet, vertices->at(0));
+      trkinfo.buildTrackInfo(builder_, *packed_cand, sv, vertices->at(0)); // jet -> sv
   
-      // data.fillMulti<float>("pfcand_btagMomentum", catchInfs(trkinfo.getTrackMomentum()));
-      // data.fillMulti<float>("pfcand_btagEta", catchInfs(trkinfo.getTrackEta()));
+      data.fillMulti<float>("pfcand_btagMomentum", catchInfs(trkinfo.getTrackMomentum()));
+      data.fillMulti<float>("pfcand_btagEta", catchInfs(trkinfo.getTrackEta()));
       data.fillMulti<float>("pfcand_btagEtaRel", catchInfs(trkinfo.getTrackEtaRel()));
       data.fillMulti<float>("pfcand_btagPtRel", catchInfs(trkinfo.getTrackPtRel()));
-      // data.fillMulti<float>("pfcand_btagPPar", catchInfs(trkinfo.getTrackPPar()));
-      // data.fillMulti<float>("pfcand_btagDeltaR", catchInfs(trkinfo.getTrackDeltaR()));
+      data.fillMulti<float>("pfcand_btagPPar", catchInfs(trkinfo.getTrackPPar()));
+      data.fillMulti<float>("pfcand_btagDeltaR", catchInfs(trkinfo.getTrackDeltaR()));
       data.fillMulti<float>("pfcand_btagPtRatio", catchInfs(trkinfo.getTrackPtRatio()));
       data.fillMulti<float>("pfcand_btagPParRatio", catchInfs(trkinfo.getTrackPParRatio()));
       data.fillMulti<float>("pfcand_btagSip2dVal", catchInfs(trkinfo.getTrackSip2dVal()));
@@ -221,8 +223,9 @@ bool PFCompleteFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t 
       data.fillMulti<float>("pfcand_btagDecayLengthVal", catchInfs(trkinfo.getTrackDecayLengthVal()));
       data.fillMulti<float>("pfcand_btagDecayLengthSig", catchInfs(trkinfo.getTrackDecayLengthSig()));
     }
-  */     
-    }
+
+      
+  
   }
 
 

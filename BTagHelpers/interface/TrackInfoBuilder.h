@@ -15,8 +15,10 @@ public:
   virtual ~TrackInfoBuilder() {}
 
 public:
+  //void buildTrackInfo(const edm::ESHandle<TransientTrackBuilder> builder,
+  //    const pat::PackedCandidate &pfcand, const pat::Jet &jet, const reco::Vertex &pv);
   void buildTrackInfo(const edm::ESHandle<TransientTrackBuilder> builder,
-      const pat::PackedCandidate &pfcand, const pat::Jet &jet, const reco::Vertex &pv);
+      const pat::PackedCandidate &pfcand, const reco::VertexCompositePtrCandidate &sv, const reco::Vertex &pv);
 
   const float& getTrackMomentum() const {return trackMomentum_;}
   const float& getTrackEta() const {return trackEta_;}

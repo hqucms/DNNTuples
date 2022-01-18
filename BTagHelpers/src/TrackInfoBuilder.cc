@@ -8,8 +8,11 @@
 
 namespace deepntuples {
 
+//void TrackInfoBuilder::buildTrackInfo(const edm::ESHandle<TransientTrackBuilder> builder,
+//    const pat::PackedCandidate &pfcand, const pat::Jet &jet, const reco::Vertex& pv) {
+// NEW:  Use SVs
 void TrackInfoBuilder::buildTrackInfo(const edm::ESHandle<TransientTrackBuilder> builder,
-    const pat::PackedCandidate &pfcand, const pat::Jet &jet, const reco::Vertex& pv) {
+    const pat::PackedCandidate &pfcand, const reco::VertexCompositePtrCandidate &sv, const reco::Vertex& pv) {
 
   const auto* bestTrk = pfcand.bestTrack();
   if (!bestTrk){
@@ -34,35 +37,35 @@ void TrackInfoBuilder::buildTrackInfo(const edm::ESHandle<TransientTrackBuilder>
 
   // DataFormats/BTauReco/interface/IPTagInfo.h
 
-  math::XYZVector jetDir = jet.momentum().Unit();
-  GlobalVector jetXYZVector(jet.px(),jet.py(),jet.pz());
+  math::XYZVector svDir = sv.momentum().Unit();
+  GlobalVector svXYZVector(sv.px(),sv.py(),sv.pz());
 
   const auto &trk = pfcand.pseudoTrack();
   reco::TransientTrack transientTrack(builder->build(trk));
-  Measurement1D meas_ip2d = IPTools::signedTransverseImpactParameter(transientTrack, jetXYZVector, pv).second;
-  Measurement1D meas_ip3d = IPTools::signedImpactParameter3D(transientTrack, jetXYZVector, pv).second;
-  Measurement1D jetdist = IPTools::jetTrackDistance(transientTrack, jetXYZVector, pv).second;
-  Measurement1D decay_length = IPTools::signedDecayLength3D(transientTrack, jetXYZVector, pv).second;
+  Measurement1D meas_ip2d = IPTools::signedTransverseImpactParameter(transientTrack, svXYZVector, pv).second;
+  Measurement1D meas_ip3d = IPTools::signedImpactParameter3D(transientTrack, svXYZVector, pv).second;
+  Measurement1D svdist = IPTools::jetTrackDistance(transientTrack, svXYZVector, pv).second;
+  Measurement1D decay_length = IPTools::signedDecayLength3D(transientTrack, svXYZVector, pv).second;
   math::XYZVector trackMom = trk.momentum();
   double trackMag = std::sqrt(trackMom.Mag2());
 
   TVector3 trackMom3(trackMom.x(),trackMom.y(),trackMom.z());
-  TVector3 jetDir3(jetDir.x(),jetDir.y(),jetDir.z());
+  TVector3 svDir3(svDir.x(),svDir.y(),svDir.z());
 
   trackMomentum_ = catchInfs(trackMag);
   trackEta_ = catchInfs(trackMom.Eta());
-  trackEtaRel_ = catchInfs(reco::btau::etaRel(jetDir, trackMom));
-  trackPtRel_ = catchInfs(trackMom3.Perp(jetDir3));
-  trackPPar_ = catchInfs(jetDir.Dot(trackMom));
-  trackDeltaR_ = catchInfs(reco::deltaR(trackMom, jetDir));
-  trackPtRatio_ = catchInfs(trackMom3.Perp(jetDir3) / trackMag);
-  trackPParRatio_ = catchInfs(jetDir.Dot(trackMom) / trackMag);
+  trackEtaRel_ = catchInfs(reco::btau::etaRel(svDir, trackMom));
+  trackPtRel_ = catchInfs(trackMom3.Perp(svDir3));
+  trackPPar_ = catchInfs(svDir.Dot(trackMom));
+  trackDeltaR_ = catchInfs(reco::deltaR(trackMom, svDir));
+  trackPtRatio_ = catchInfs(trackMom3.Perp(svDir3) / trackMag);
+  trackPParRatio_ = catchInfs(svDir.Dot(trackMom) / trackMag);
   trackSip2dVal_ = catchInfs(meas_ip2d.value());
   trackSip2dSig_ = catchInfs(meas_ip2d.significance());
   trackSip3dVal_ = catchInfs(meas_ip3d.value());
   trackSip3dSig_ = catchInfs(meas_ip3d.significance());
-  trackJetDistVal_ = catchInfs(jetdist.value());
-  trackJetDistSig_ = catchInfs(jetdist.significance());
+  trackJetDistVal_ = catchInfs(svdist.value());
+  trackJetDistSig_ = catchInfs(svdist.significance());
   trackDecayLengthVal_ = catchInfs(decay_length.value());
   trackDecayLengthSig_ = catchInfs(decay_length.significance());
 }
