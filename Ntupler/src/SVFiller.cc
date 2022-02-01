@@ -342,15 +342,14 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   float dr_min = 100;
   for (unsigned j=0; j<jets->size(); j++) {
     const auto& jet = jets->at(j);
-    if (  (reco::deltaR(jet, sv) < 0.4)
-       && (reco::deltaR(jet, sv) > 0.1)
-       && (jet.pt() > 40)
-       && (std::abs(jet.eta()) < 2.5)) {
+    if ((jet.pt() > 40) &&
+        (std::abs(jet.eta()) < 2.5)) {
       if (reco::deltaR(jet, sv) < dr_min) {
         dr_min = reco::deltaR(jet, sv) < dr_min;
       }
     }
   }
+  if (dr_min < 0.1) return false;
   data.fillMulti<float>("sv_neardr", dr_min);
 
 
