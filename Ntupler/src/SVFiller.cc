@@ -59,9 +59,20 @@ int hadronFlavor(const reco::GenParticle gp) { // was GenParticle* gp
   int id = hadronFlavorID(gp.pdgId());
   if (id == 4) { // c -- may be b->c
     reco::GenParticle const* gp_ = &gp;
-    while (gp_->numberOfMothers() == 1) {
-      if (hadronFlavorID(gp_->pdgId()) == 5) return 10;
-      gp_ = (reco::GenParticle*)(gp_->mother());
+    //std::cout << "in hadrFlav, had id=4" << std::endl;
+    while (gp_->numberOfMothers() != 0) {
+      /*if (gp_->numberOfMothers() > 1) {
+        std::cout << "    IN HADRONFLAVOR:  Found >1 mothers: " << gp_->numberOfMothers() << std::endl;
+        for (unsigned i=0; i<gp_->numberOfMothers(); i++) {
+          std::cout << "       mother " << i << " pdgID: " << hadronFlavorID(gp_->mother(i)->pdgId()) << ", nmothers: " << gp_->mother(i)->numberOfMothers() << ", mother ID=" << hadronFlavorID(gp_->mother(i)->mother(0)->pdgId()) << std::endl;
+        }
+      }*/
+      if (hadronFlavorID(gp_->pdgId()) == 5) {
+        //std::cout << "  found mother, hadID 5" << std::endl;
+        return 10;
+      }
+      //std::cout << "  mother hadID incorrect, checking next mother" << std::endl;
+      gp_ = (reco::GenParticle*)(gp_->mother(0));
     }
   }
   return id;
@@ -78,20 +89,19 @@ void SVFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollect
 }
 
 void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
-  //std::cout << "In readEvent" <<std::endl;
+  //std::cout << "\nBEGINING readEvent" <<std::endl;
   iEvent.getByToken(vtxToken_, vertices);
   iEvent.getByToken(svToken_, SVs);
   iEvent.getByToken(jetToken_, jets);
   iEvent.getByToken(genParticlesToken_, particles);
 
-  std::cout << "TEMP:  PRINT GEN PARTICLE INFO" << std::endl;
+  /*std::cout << "TEMP:  PRINT GEN PARTICLE INFO" << std::endl;
   printGenInfoHeader();
   for (unsigned ipart = 0; ipart<particles->size(); ++ipart){
     printGenParticleInfo(&(particles->at(ipart)), ipart);
   }
   std::cout << "DONE, now tracking" << std::endl;
-  
-
+  */
 
   // NEW:  Perform matching here!
   // (Can't do in DeepNtuplizer bc can't pass results; can't do in fill() bc need all SVs)
@@ -102,60 +112,57 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   int n_good_jets = 0;
   for (unsigned j=0; j<jets->size(); j++) {
     const auto& jet = jets->at(j);
-    if (  (jet.pt() > 40)
-       && (std::abs(jet.eta()) < 2.5)
-       && (jet.hadronFlavour() & 4) ) {
+    if ((jet.pt() > 40) 
+       && (std::abs(jet.eta()) < 2.5) ) {
+       //&& (jet.hadronFlavour() & 4) ) {
       n_good_jets++;
     }
   }
-  std::cout << "Found " << n_good_jets << " good jets" << std::endl;
-  // if sv close to a jet, assign ID of -1 and ignore it
+  //std::cout << "Found " << n_good_jets << " good jets" << std::endl;
+  //std::cout << "Init SVs: " << SVs->size() << std::endl;
+
+  // if sv close to a jet, assign ID of -999 and ignore it
   int jet_free_svs = 0;
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
-    matchedIDs[i] = -999;  // initialize
+    matchedIDs[i] = -1;  // initialize
     for (unsigned j=0; j<jets->size(); j++) {
       const auto& jet = jets->at(j);
       if (  (reco::deltaR(jet, sv) < 0.4)
          && (jet.pt() > 40)
-         && (std::abs(jet.eta()) < 2.5)
-         && (jet.hadronFlavour() & 4) ) {  // not 100% sure whether this is correct
+         && (std::abs(jet.eta()) < 2.5)) {
+         //&& (jet.hadronFlavour() & 4) ) {  // not 100% sure whether this is correct
          //&& (jet.jetID() & 4) ) {  // don't know how to add this...
-        matchedIDs[i] = -1;  // ignore
+        matchedIDs[i] = -999;  // -999 = ignore
+        //std::cout << "     SV " << i << " close to jet " << j << std::endl;
+      } else if (  (reco::deltaR(jet, sv) < 0.50)
+         && (jet.pt() > 35)
+         && (std::abs(jet.eta()) < 2.7)) {
+        //std::cout << "   close match" << std::endl;
       }
     }
-    if (matchedIDs[i] == -999) jet_free_svs += 1;
+    if (matchedIDs[i] == -1) {
+      jet_free_svs += 1;
+      //std::cout << "  SV outside jet" << std::endl;
+    }/* else {
+      std::cout << "  SV inside jet" << std::endl;
+    }*/
   }
-  std::cout << "Found jet-free SVs: " << jet_free_svs << std::endl;
-  // - create c, b, b->c hadron lists...probably not necessary
-  /*
-  std::vector<const reco::GenParticle&> cHadrons;
-  std::vector<const reco::GenParticle&> bHadrons;
-  std::vector<const reco::GenParticle&> bcHadrons;
-  for (unsigned ipart = 0; ipart<particles->size(); ++ipart) {
-    const auto& gp = particles->at(ipart);
-    int pdgID = hadronFlavor(gp);
-    if (pdgID==4)  cHadrons.push_back(gp);
-    if (pdgID==5)  bHadrons.push_back(gp);
-    if (pdgID==10) bcHadrons.push_back(gp);
-  }*/
 
   // - create full list of (sv, hadr pairs); dr-sorted
-  //std::cout << "EVENT" <<std::endl;
-  //std::cout << "Found " << SVs->size() << " SVs, " << particles->size() << " particles" << std::endl;
-  //std::cout << "...and " << jet_free_svs << " SVs far from jets" << std::endl;
+  std::cout << "Jet-free SVs: " << jet_free_svs << std::endl;
   std::vector<std::tuple<float, unsigned, unsigned>> pairList; // sv num, had num
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
-    if (matchedIDs[i] == -1) continue; // if sv is near a jet, skip it
-    std::cout << "found sv " << i << std::endl;
+    if (matchedIDs[i] == -999) continue; // if sv is near a jet, skip it
+    //std::cout << "found sv " << i << std::endl;
     for (unsigned j=0; j<particles->size(); j++) {
       const auto& gp = particles->at(j);
       //if (hadronFlavor(gp) > 0) std::cout << "   hadr flav: " << hadronFlavor(gp) << ", dr=" << reco::deltaR(gp, sv) << std::endl;
       if (!gp.statusFlags().isLastCopy()) continue;
       if ((hadronFlavor(gp) == 4 || hadronFlavor(gp) == 5 || hadronFlavor(gp) == 10)
           && reco::deltaR(gp, sv) < 0.4) {
-        std::cout << "   MATCHED SV " << i << " to particle " << j <<", flav=" << hadronFlavor(gp) << std::endl;
+        //std::cout << "   MATCHED SV " << i << " to particle " << j <<", flav=" << hadronFlavor(gp) << ", dR=" << reco::deltaR(gp, sv) << std::endl;
         pairList.push_back(std::tuple<float, int, int>(deltaR(gp, sv), i, j));
       }
     }
@@ -164,10 +171,9 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
     [](const std::tuple<float, unsigned, unsigned> & a, const std::tuple<float, unsigned, unsigned> & b) -> bool 
     {return std::get<0>(a) < std::get<0>(b);}  // NOTE:  Flipped direction of <!  May have been wrong before...
     );
-  std::cout << "pairList size is " << pairList.size() << std::endl;
 
   // - take lowest-sep pair and match; remove sv AND hadr from consideration
-  std::cout << "Assigning lowest-sep pairs" << std::endl;
+  //std::cout << "Assigning lowest-sep pairs" << std::endl;
   while (pairList.size() > 0) {
     // pair witih lowest dR:
     std::tuple<float, unsigned, unsigned> sel_tuple = pairList[0];
@@ -175,20 +181,32 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
     matchedIDs[std::get<1>(sel_tuple)] = hadronFlavor(gp); // matchedIDs[sv#] = gen hadron ID
     std::cout << "  ASSIGNED SV " << std::get<1>(sel_tuple) << " to part " << std::get<2>(sel_tuple) << ", hadr type=" << hadronFlavor(gp) << std::endl;
     // remove all occurences of this sv, hadron
-    for (unsigned i = 0; i < pairList.size(); i++) { // loop through each element of pairList, check for removal
-      if (std::get<1>(pairList[i]) == std::get<1>(sel_tuple) || std::get<2>(pairList[i]) == std::get<2>(sel_tuple)) {
-        pairList.erase(pairList.begin()+i);
+    //for (unsigned i = 0; i < pairList.size(); i++) { // loop through each element of pairList, check for removal
+    unsigned ind = 0;
+    while (ind < pairList.size()) {
+      if (std::get<1>(pairList[ind]) == std::get<1>(sel_tuple) || std::get<2>(pairList[ind]) == std::get<2>(sel_tuple)) {
+        // if an element gets erased, do NOT increment ind; the next element will get slotted into ind
+        pairList.erase(pairList.begin()+ind);
+      } else {
+        ind++;
       }
     }
   }
-  std::cout << "Finished removing" << std::endl;
+  //std::cout << "Finished removing" << std::endl;
 
   // - find lights in unmatched SVs (if dR>0.8 for all hadr)
+  // note: currently finding too many lights
+  int unmatched = 0;
+  for (unsigned i=0; i<SVs->size(); i++) {
+    if (matchedIDs[i] == -1) unmatched += 1;
+  }
+  //std::cout << "*Unmatched SVs: " << unmatched << std::endl;
+
   std::vector<std::tuple<float, unsigned, unsigned>> pairList_; // sv num, had num
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
     bool isLight = true;
-    if (matchedIDs[i] == -1) continue; // if sv is near a jet, skip it
+    if (matchedIDs[i] == -999) continue; // if sv is near a jet, skip it
     for (unsigned j=0; j<particles->size(); j++) {
       const auto& gp = particles->at(j);
       if ((hadronFlavor(gp) == 4 || hadronFlavor(gp) == 5 || hadronFlavor(gp) == 10)
@@ -197,7 +215,14 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
         isLight = false;
       }
     }
-    if (isLight) matchedIDs[i] = 0;
+    if (isLight) {
+      //if (matchedIDs[i] != -1) std::cout << "ERROR ERROR ERROR!" << std::endl;
+      matchedIDs[i] = 0;
+      //std::cout << "  SV " << i << " is light" << std::endl;
+    }
+    else if (matchedIDs[i] == -1) {
+      //std::cout << "  SV " << i << " is unassigned" << std::endl;
+    }
   }
   /*
   //std::cout << "Finalizing matching" << std::endl;
@@ -213,10 +238,12 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   }
   */
 
+
   //finally, move -999s to -1s (now okay to ignore these)
-  for (unsigned i = 0; i<SVs->size(); i++) {
-    if (matchedIDs[i] == -999) matchedIDs[i] = -1;
-  }
+  //for (unsigned i = 0; i<SVs->size(); i++) {
+  //  if (matchedIDs[i] == -999) matchedIDs[i] = -1;
+  //}
+
   /*std::cout << "Matching results: [" << std::endl;
   for (unsigned i=0; i<SVs->size(); i++) {
     std::cout << matchedIDs[i] << ", ";
@@ -231,17 +258,22 @@ void SVFiller::book() {
   data.add<float>("nsv", 0);
 
   // basic kinematics
-  data.addMulti<float>("sv_ptrel");
-  data.addMulti<float>("sv_erel");
-  data.addMulti<float>("sv_phirel");
-  data.addMulti<float>("sv_etarel");
-  data.addMulti<float>("sv_deltaR");
+  //data.addMulti<float>("sv_ptrel"); // old jet vars
+  //data.addMulti<float>("sv_erel");
+  //data.addMulti<float>("sv_phirel");
+  //data.addMulti<float>("sv_etarel");
+  //data.addMulti<float>("sv_deltaR");
   data.addMulti<float>("sv_pt");
   data.addMulti<float>("sv_abseta");
   data.addMulti<float>("sv_mass");
+  data.addMulti<float>("sv_energy");
 
-  data.addMulti<float>("sv_ptrel_log");
-  data.addMulti<float>("sv_erel_log");
+  data.addMulti<float>("sv_px");
+  data.addMulti<float>("sv_py");
+  data.addMulti<float>("sv_pz");
+
+  //data.addMulti<float>("sv_ptrel_log");
+  //data.addMulti<float>("sv_erel_log");
   data.addMulti<float>("sv_pt_log");
   data.addMulti<float>("sv_e_log");
 
@@ -256,9 +288,9 @@ void SVFiller::book() {
   data.addMulti<float>("sv_d3d");
   data.addMulti<float>("sv_d3derr");
   data.addMulti<float>("sv_d3dsig");
-  data.addMulti<float>("sv_costhetasvpv");
+  data.addMulti<float>("sv_costhetasvpv"); //pAngle in nanoAOD
+  data.addMulti<float>("sv_phi");
 
-  // NEW
   data.addMulti<float>("sv_gen_flavor");
 
 }
@@ -276,7 +308,12 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fillMulti<float>("sv_pt", sv.pt());
   data.fillMulti<float>("sv_abseta", std::abs(sv.eta()));
   data.fillMulti<float>("sv_mass", sv.mass());
-    
+  data.fillMulti<float>("sv_energy", sv.energy());
+  //NEW
+  data.fillMulti<float>("sv_px", sv.momentum().X());
+  data.fillMulti<float>("sv_py", sv.momentum().Y());
+  data.fillMulti<float>("sv_pz", sv.momentum().Z());
+
   //data.fillMulti<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
   //data.fillMulti<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
   data.fillMulti<float>("sv_pt_log", catchInfs(std::log(sv.pt()), -99));
@@ -298,6 +335,7 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fillMulti<float>("sv_d3derr", d3d.error());
   data.fillMulti<float>("sv_d3dsig", d3d.significance());
   data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
+  data.fillMulti<float>("sv_phi", sv.phi());
 
   return true;
 }
@@ -325,3 +363,6 @@ float SVFiller::vertexDdotP(const reco::VertexCompositePtrCandidate &sv, const r
 
 
 } /* namespace deepntuples */
+
+
+
