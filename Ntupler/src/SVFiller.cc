@@ -290,6 +290,7 @@ void SVFiller::book() {
   data.addMulti<float>("sv_d3dsig");
   data.addMulti<float>("sv_costhetasvpv"); //pAngle in nanoAOD
   data.addMulti<float>("sv_phi");
+  data.addMulti<float>("sv_neardr");
 
   data.addMulti<float>("sv_gen_flavor");
 
@@ -336,6 +337,22 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fillMulti<float>("sv_d3dsig", d3d.significance());
   data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
   data.fillMulti<float>("sv_phi", sv.phi());
+
+  // New:  add dR info for jets near the SV
+  dr_min = 100
+  for (int j=0; j<jets->size(); j++) {
+    const auto& jet = jets->at(j);
+    if (  (reco::deltaR(jet, sv) < 0.4)
+       && (reco::deltaR(jet, sv) > 0.1)
+       && (jet.pt() > 40)
+       && (std::abs(jet.eta()) < 2.5)) {
+      if (reco::deltaR(jet, sv) < dr_min) {
+        dr_min = reco::deltaR(jet, sv) < dr_min;
+      }
+    }
+  }
+  data.fillMulti<float>("sv_neardr", dr_min);
+
 
   return true;
 }
