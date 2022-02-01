@@ -339,8 +339,8 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fillMulti<float>("sv_phi", sv.phi());
 
   // New:  add dR info for jets near the SV
-  dr_min = 100
-  for (int j=0; j<jets->size(); j++) {
+  float dr_min = 100;
+  for (unsigned j=0; j<jets->size(); j++) {
     const auto& jet = jets->at(j);
     if (  (reco::deltaR(jet, sv) < 0.4)
        && (reco::deltaR(jet, sv) > 0.1)
