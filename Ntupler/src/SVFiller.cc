@@ -150,7 +150,7 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   }
 
   // - create full list of (sv, hadr pairs); dr-sorted
-  std::cout << "Jet-free SVs: " << jet_free_svs << std::endl;
+  //std::cout << "Jet-free SVs: " << jet_free_svs << std::endl;
   std::vector<std::tuple<float, unsigned, unsigned>> pairList; // sv num, had num
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
@@ -179,7 +179,7 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
     std::tuple<float, unsigned, unsigned> sel_tuple = pairList[0];
     const auto& gp = particles->at(std::get<2>(sel_tuple));
     matchedIDs[std::get<1>(sel_tuple)] = hadronFlavor(gp); // matchedIDs[sv#] = gen hadron ID
-    std::cout << "  ASSIGNED SV " << std::get<1>(sel_tuple) << " to part " << std::get<2>(sel_tuple) << ", hadr type=" << hadronFlavor(gp) << std::endl;
+    //std::cout << "  ASSIGNED SV " << std::get<1>(sel_tuple) << " to part " << std::get<2>(sel_tuple) << ", hadr type=" << hadronFlavor(gp) << std::endl;
     // remove all occurences of this sv, hadron
     //for (unsigned i = 0; i < pairList.size(); i++) { // loop through each element of pairList, check for removal
     unsigned ind = 0;
@@ -303,6 +303,19 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
 
   const auto &pv = vertices->at(0);
 
+  // New:  add dR info for jets near the SV
+  float dr_min = 100;
+  for (unsigned j=0; j<jets->size(); j++) {
+    const auto& jet = jets->at(j);
+    if ((jet.pt() > 40) &&
+        (std::abs(jet.eta()) < 2.5)) {
+      if (reco::deltaR(jet, sv) < dr_min) {
+        dr_min = reco::deltaR(jet, sv);
+      }
+    }
+  }
+  if (dr_min < 0.1) return false;
+  std::cout << dr_min << std::endl;
 
   data.fillMulti<float>("sv_gen_flavor", matchedIDs[svidx]);
 
@@ -338,18 +351,6 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
   data.fillMulti<float>("sv_phi", sv.phi());
 
-  // New:  add dR info for jets near the SV
-  float dr_min = 100;
-  for (unsigned j=0; j<jets->size(); j++) {
-    const auto& jet = jets->at(j);
-    if ((jet.pt() > 40) &&
-        (std::abs(jet.eta()) < 2.5)) {
-      if (reco::deltaR(jet, sv) < dr_min) {
-        dr_min = reco::deltaR(jet, sv) < dr_min;
-      }
-    }
-  }
-  if (dr_min < 0.1) return false;
   data.fillMulti<float>("sv_neardr", dr_min);
 
 
