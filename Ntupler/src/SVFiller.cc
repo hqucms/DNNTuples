@@ -55,7 +55,7 @@ int hadronFlavorID(int id) {
   }
 }
 
-int hadronFlavor(const reco::GenParticle gp) { // was GenParticle* gp
+int hadronFlavor(const reco::GenParticle& gp) { // was GenParticle* gp
   int id = hadronFlavorID(gp.pdgId());
   if (id == 4) { // c -- may be b->c
     reco::GenParticle const* gp_ = &gp;
@@ -122,7 +122,7 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   //std::cout << "Init SVs: " << SVs->size() << std::endl;
 
   // if sv close to a jet, assign ID of -999 and ignore it
-  int jet_free_svs = 0;
+  /*
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
     matchedIDs[i] = -1;  // initialize
@@ -141,13 +141,8 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
         //std::cout << "   close match" << std::endl;
       }
     }
-    if (matchedIDs[i] == -1) {
-      jet_free_svs += 1;
-      //std::cout << "  SV outside jet" << std::endl;
-    }/* else {
-      std::cout << "  SV inside jet" << std::endl;
-    }*/
   }
+  */
 
   // - create full list of (sv, hadr pairs); dr-sorted
   //std::cout << "Jet-free SVs: " << jet_free_svs << std::endl;
@@ -179,7 +174,9 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
     std::tuple<float, unsigned, unsigned> sel_tuple = pairList[0];
     const auto& gp = particles->at(std::get<2>(sel_tuple));
     matchedIDs[std::get<1>(sel_tuple)] = hadronFlavor(gp); // matchedIDs[sv#] = gen hadron ID
-    //std::cout << "  ASSIGNED SV " << std::get<1>(sel_tuple) << " to part " << std::get<2>(sel_tuple) << ", hadr type=" << hadronFlavor(gp) << std::endl;
+    //if (hadronFlavor(gp) > 10) {
+    //  std::cout << "  ASSIGNED SV " << std::get<1>(sel_tuple) << " to part " << std::get<2>(sel_tuple) << ", hadr type=" << hadronFlavor(gp) << std::endl;
+    //}
     // remove all occurences of this sv, hadron
     //for (unsigned i = 0; i < pairList.size(); i++) { // loop through each element of pairList, check for removal
     unsigned ind = 0;
@@ -202,6 +199,7 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   }
   //std::cout << "*Unmatched SVs: " << unmatched << std::endl;
 
+  lightdr = 10;  //unphysically high by default, I think
   std::vector<std::tuple<float, unsigned, unsigned>> pairList_; // sv num, had num
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
@@ -213,6 +211,7 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
           && reco::deltaR(gp, sv) < 0.8) {
         //pairList_.push_back(std::tuple<float, unsigned, unsigned>(deltaR(gp, sv), i, j));
         isLight = false;
+        if (reco::deltaR(gp, sv) < lightdr) lightdr = reco::deltaR(gp, sv);
       }
     }
     if (isLight) {
@@ -258,41 +257,43 @@ void SVFiller::book() {
   data.add<float>("nsv", 0);
 
   // basic kinematics
-  //data.addMulti<float>("sv_ptrel"); // old jet vars
-  //data.addMulti<float>("sv_erel");
-  //data.addMulti<float>("sv_phirel");
-  //data.addMulti<float>("sv_etarel");
-  //data.addMulti<float>("sv_deltaR");
-  data.addMulti<float>("sv_pt");
-  data.addMulti<float>("sv_abseta");
-  data.addMulti<float>("sv_mass");
-  data.addMulti<float>("sv_energy");
+  //data.add<float>("sv_ptrel"); // old jet vars
+  //data.add<float>("sv_erel");
+  //data.add<float>("sv_phirel");
+  //data.add<float>("sv_etarel");
+  //data.add<float>("sv_deltaR");
+  data.add<float>("sv_pt", -100);
+  data.add<float>("sv_eta", 4);
+  data.add<float>("sv_abseta", 4);
+  data.add<float>("sv_mass", -5);
+  data.add<float>("sv_energy", -100);
 
-  data.addMulti<float>("sv_px");
-  data.addMulti<float>("sv_py");
-  data.addMulti<float>("sv_pz");
+  data.add<float>("sv_px", 999);
+  data.add<float>("sv_py", 999);
+  data.add<float>("sv_pz", 999);
 
-  //data.addMulti<float>("sv_ptrel_log");
-  //data.addMulti<float>("sv_erel_log");
-  data.addMulti<float>("sv_pt_log");
-  data.addMulti<float>("sv_e_log");
+  //data.add<float>("sv_ptrel_log");
+  //data.add<float>("sv_erel_log");
+  data.add<float>("sv_pt_log", -1);
+  data.add<float>("sv_e_log", -1);
 
   // sv properties
-  data.addMulti<float>("sv_ntracks");
-  data.addMulti<float>("sv_chi2");
-  data.addMulti<float>("sv_ndf");
-  data.addMulti<float>("sv_normchi2");
-  data.addMulti<float>("sv_dxy");
-  data.addMulti<float>("sv_dxyerr");
-  data.addMulti<float>("sv_dxysig");
-  data.addMulti<float>("sv_d3d");
-  data.addMulti<float>("sv_d3derr");
-  data.addMulti<float>("sv_d3dsig");
-  data.addMulti<float>("sv_costhetasvpv"); //pAngle in nanoAOD
-  data.addMulti<float>("sv_phi");
-  data.addMulti<float>("sv_neardr");
+  data.add<float>("sv_ntracks", -1);
+  data.add<float>("sv_chi2", -5);
+  data.add<float>("sv_ndf", -5);
+  data.add<float>("sv_normchi2", -35000);
+  data.add<float>("sv_dxy", -5);
+  data.add<float>("sv_dxyerr", -1);
+  data.add<float>("sv_dxysig", -100);
+  data.add<float>("sv_d3d", -5);
+  data.add<float>("sv_d3derr", -1);
+  data.add<float>("sv_d3dsig", -100);
+  data.add<float>("sv_costhetasvpv", -2); //pAngle in nanoAOD
+  data.add<float>("sv_phi", -5);
+  data.add<float>("sv_neardr", -1); // nearest jet with dR>0.1
+  data.add<float>("sv_lightdr", -1); // lowest dR of nearby 
 
-  data.addMulti<float>("sv_gen_flavor");
+  data.add<float>("sv_gen_flavor", -1);
 
 }
 
@@ -315,44 +316,48 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
     }
   }
   if (dr_min < 0.1) return false;
-  std::cout << dr_min << std::endl;
 
-  data.fillMulti<float>("sv_gen_flavor", matchedIDs[svidx]);
+  if (matchedIDs[svidx]!=10 && matchedIDs[svidx]!=5 && matchedIDs[svidx]!=4 && matchedIDs[svidx]!=0) {
+    //std::cout << "ASSIGNED " << matchedIDs[svidx] << std::endl;
+    matchedIDs[svidx] = -1;
+  }
+  data.fill<float>("sv_gen_flavor", matchedIDs[svidx]);
 
-  data.fillMulti<float>("sv_pt", sv.pt());
-  data.fillMulti<float>("sv_abseta", std::abs(sv.eta()));
-  data.fillMulti<float>("sv_mass", sv.mass());
-  data.fillMulti<float>("sv_energy", sv.energy());
+  data.fill<float>("sv_pt", sv.pt());
+  data.fill<float>("sv_eta", sv.eta());
+  data.fill<float>("sv_abseta", std::abs(sv.eta()));
+  data.fill<float>("sv_mass", sv.mass());
+  data.fill<float>("sv_energy", sv.energy());
   //NEW
-  data.fillMulti<float>("sv_px", sv.momentum().X());
-  data.fillMulti<float>("sv_py", sv.momentum().Y());
-  data.fillMulti<float>("sv_pz", sv.momentum().Z());
+  data.fill<float>("sv_px", sv.momentum().X());
+  data.fill<float>("sv_py", sv.momentum().Y());
+  data.fill<float>("sv_pz", sv.momentum().Z());
 
-  //data.fillMulti<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
-  //data.fillMulti<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
-  data.fillMulti<float>("sv_pt_log", catchInfs(std::log(sv.pt()), -99));
-  data.fillMulti<float>("sv_e_log", catchInfs(std::log(sv.energy()), -99));
+  //data.fill<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
+  //data.fill<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
+  data.fill<float>("sv_pt_log", catchInfs(std::log(sv.pt()), -99));
+  data.fill<float>("sv_e_log", catchInfs(std::log(sv.energy()), -99));
     
   // sv properties
-  data.fillMulti<float>("sv_ntracks", sv.numberOfDaughters());
-  data.fillMulti<float>("sv_chi2", sv.vertexChi2());
-  data.fillMulti<float>("sv_ndf", sv.vertexNdof());
-  data.fillMulti<float>("sv_normchi2", catchInfs(sv.vertexNormalizedChi2()));
+  data.fill<float>("sv_ntracks", sv.numberOfDaughters());
+  data.fill<float>("sv_chi2", sv.vertexChi2());
+  data.fill<float>("sv_ndf", sv.vertexNdof());
+  data.fill<float>("sv_normchi2", catchInfs(sv.vertexNormalizedChi2()));
     
   const auto &dxy = vertexDxy(sv, pv);
-  data.fillMulti<float>("sv_dxy", dxy.value());
-  data.fillMulti<float>("sv_dxyerr", dxy.error());
-  data.fillMulti<float>("sv_dxysig", dxy.significance());
+  data.fill<float>("sv_dxy", dxy.value());
+  data.fill<float>("sv_dxyerr", dxy.error());
+  data.fill<float>("sv_dxysig", dxy.significance());
     
   const auto &d3d = vertexD3d(sv, pv);
-  data.fillMulti<float>("sv_d3d", d3d.value());
-  data.fillMulti<float>("sv_d3derr", d3d.error());
-  data.fillMulti<float>("sv_d3dsig", d3d.significance());
-  data.fillMulti<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
-  data.fillMulti<float>("sv_phi", sv.phi());
+  data.fill<float>("sv_d3d", d3d.value());
+  data.fill<float>("sv_d3derr", d3d.error());
+  data.fill<float>("sv_d3dsig", d3d.significance());
+  data.fill<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
+  data.fill<float>("sv_phi", sv.phi());
 
-  data.fillMulti<float>("sv_neardr", dr_min);
-
+  data.fill<float>("sv_neardr", dr_min);
+  data.fill<float>("sv_lightdr", lightdr);
 
   return true;
 }

@@ -49,6 +49,16 @@ process.TFileService = cms.Service("TFileService",
 
 process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(options.maxEvents))
 
+# NEW, to avoid duplicate events, default 100
+seed = 101
+process.add_( cms.Service("RandomNumberGeneratorService",
+        externalLHEProducer = cms.PSet(
+            initialSeed = cms.untracked.uint32(seed),
+            engineName = cms.untracked.string('HepJamesRandom')
+        )
+    )
+)
+
 process.source = cms.Source('PoolSource',
     fileNames=cms.untracked.vstring(options.inputFiles),
     skipEvents=cms.untracked.uint32(options.skipEvents)

@@ -48,6 +48,11 @@ void PFCompleteFiller::book() {
   data.addMulti<float>("pfcand_isGamma");
   data.addMulti<float>("pfcand_isNeutralHad");
 
+  data.addMulti<float>("pfcand_px");
+  data.addMulti<float>("pfcand_py");
+  data.addMulti<float>("pfcand_pz");
+  data.addMulti<float>("pfcand_energy");
+
   // for neutral
   data.addMulti<float>("pfcand_hcalFrac");
   data.addMulti<float>("pfcand_hcalFracCalib");
@@ -142,12 +147,15 @@ bool PFCompleteFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t 
       data.fillMulti<float>("pfcand_isChargedHad", std::abs(packed_cand->pdgId())==211);
       data.fillMulti<float>("pfcand_isGamma", std::abs(packed_cand->pdgId())==22);
       data.fillMulti<float>("pfcand_isNeutralHad", std::abs(packed_cand->pdgId())==130);
-  
+      data.fillMulti<float>("pfcand_px", (packed_cand->momentum()).X());
+      data.fillMulti<float>("pfcand_py", (packed_cand->momentum()).Y());
+      data.fillMulti<float>("pfcand_pz", (packed_cand->momentum()).Z());
+      data.fillMulti<float>("pfcand_energy", packed_cand->energy());
 
       // *BELOW:*  Switchin packed_cand (ptr) -> SV (not ptr) where possible
       // for neutral
       float hcal_fraction = 0.;
-      if (sv.pdgId() == 1 || sv.pdgId() == 130) {
+      if (packed_cand->pdgId() == 1 || packed_cand->pdgId() == 130) {
         hcal_fraction = packed_cand->hcalFraction();
       } else if (packed_cand->isIsolatedChargedHadron()) {
         hcal_fraction = packed_cand->rawHcalFraction();
