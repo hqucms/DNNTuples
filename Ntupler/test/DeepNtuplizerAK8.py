@@ -5,7 +5,7 @@ from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
-options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/BulkGravitonToHHTo4Q_MX-600to6000_MH-15to250_part2_TuneCP5_13TeV-madgraph_pythia8/MINIAODSIM/multigridpack_106X_mc2017_realistic_v6-v1/50000/FB46C2C2-73A4-A64C-A3D7-FC47C6A48871.root'
+options.inputFiles = '/store/mc/Run3Winter22MiniAOD/GluGluToBulkGravitonToHHTo4B_M-1000_narrow_WZHtag_TuneCP5_13p6TeV-madgraph-pythia8/MINIAODSIM/122X_mcRun3_2021_realistic_v9-v2/60000/036be098-e99b-4fe5-b7d9-eff4c9f3c339.root'
 options.maxEvents = -1
 
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
@@ -61,37 +61,37 @@ process.GlobalTag = GlobalTag(process.GlobalTag, globalTagMap[era], '')
 print('Using global tag', process.GlobalTag.globaltag)
 # ---------------------------------------------------------
 # read JEC from sqlite
-if era == 'Summer19UL17':
-    import os
-    jecTag = 'Summer19UL17_V5_MC'
-    jecFile = '%s.db' % jecTag
-    if not os.path.exists(jecFile):
-        os.symlink('../data/' + jecFile, jecFile)
-    from CondCore.CondDB.CondDB_cfi import CondDB
-    CondDBJECFile = CondDB.clone(connect=cms.string('sqlite:%s' % jecFile))
-    process.jec = cms.ESSource('PoolDBESSource',
-                               CondDBJECFile,
-                               toGet=cms.VPSet(
-                                   cms.PSet(
-                                       record=cms.string('JetCorrectionsRecord'),
-                                       tag=cms.string('JetCorrectorParametersCollection_%s_AK4PFchs' % jecTag),
-                                       label=cms.untracked.string('AK4PFchs')
-                                   ),
-                                   cms.PSet(
-                                       record=cms.string('JetCorrectionsRecord'),
-                                       tag=cms.string('JetCorrectorParametersCollection_%s_AK4PFPuppi' % jecTag),
-                                       label=cms.untracked.string('AK4PFPuppi')
-                                   ),
-                                   # ...and so on for all jet types you need
-                               )
-                               )
-    print(jecTag, process.jec.toGet)
-    # Add an ESPrefer to override JEC that might be available from the global tag
-    process.es_prefer_jec = cms.ESPrefer('PoolDBESSource', 'jec')
+# if era == 'Summer19UL17':
+#     import os
+#     jecTag = 'Summer19UL17_V5_MC'
+#     jecFile = '%s.db' % jecTag
+#     if not os.path.exists(jecFile):
+#         os.symlink('../data/' + jecFile, jecFile)
+#     from CondCore.CondDB.CondDB_cfi import CondDB
+#     CondDBJECFile = CondDB.clone(connect=cms.string('sqlite:%s' % jecFile))
+#     process.jec = cms.ESSource('PoolDBESSource',
+#                                CondDBJECFile,
+#                                toGet=cms.VPSet(
+#                                    cms.PSet(
+#                                        record=cms.string('JetCorrectionsRecord'),
+#                                        tag=cms.string('JetCorrectorParametersCollection_%s_AK4PFchs' % jecTag),
+#                                        label=cms.untracked.string('AK4PFchs')
+#                                    ),
+#                                    cms.PSet(
+#                                        record=cms.string('JetCorrectionsRecord'),
+#                                        tag=cms.string('JetCorrectorParametersCollection_%s_AK4PFPuppi' % jecTag),
+#                                        label=cms.untracked.string('AK4PFPuppi')
+#                                    ),
+#                                    # ...and so on for all jet types you need
+#                                )
+#                                )
+#     print(jecTag, process.jec.toGet)
+#     # Add an ESPrefer to override JEC that might be available from the global tag
+#     process.es_prefer_jec = cms.ESPrefer('PoolDBESSource', 'jec')
 # ---------------------------------------------------------
 # Update to PuppiV14
-from CommonTools.PileupAlgos.customizePuppiTune_cff import UpdatePuppiTuneV14_MC
-UpdatePuppiTuneV14_MC(process)
+# from CommonTools.PileupAlgos.customizePuppiTune_cff import UpdatePuppiTuneV14_MC
+# UpdatePuppiTuneV14_MC(process)
 # ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
@@ -146,7 +146,7 @@ else:
         jetSource=cms.InputTag('slimmedJetsAK8'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll,
+        btagDiscriminators=['None'],
         btagInfos=bTagInfos,
     )
     process.updatedPatJetsTransientCorrected.addTagInfos = cms.bool(True)
