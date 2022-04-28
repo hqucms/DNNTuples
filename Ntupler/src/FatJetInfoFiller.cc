@@ -347,9 +347,9 @@ bool FatJetInfoFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
   // --------
   // double-b
 
-  const auto *bdsvTagInfo = jet.tagInfoBoostedDoubleSV(fjTagInfoName);
-  assert(bdsvTagInfo);
-  const auto &vars = bdsvTagInfo->taggingVariables();
+  // const auto *bdsvTagInfo = jet.tagInfoBoostedDoubleSV(fjTagInfoName);
+  // assert(bdsvTagInfo);
+  // const auto &vars = bdsvTagInfo->taggingVariables();
 
   data.fill<float>("fj_doubleb", jet.bDiscriminator("pfBoostedDoubleSecondaryVertexAK8BJetTags"));
 

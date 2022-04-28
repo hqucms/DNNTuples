@@ -56,6 +56,7 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
+process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, globalTagMap[era], '')
 print('Using global tag', process.GlobalTag.globaltag)
@@ -97,7 +98,8 @@ from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 from RecoBTag.ONNXRuntime.pfDeepBoostedJet_cff import _pfDeepBoostedJetTagsAll as pfDeepBoostedJetTagsAll
 from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetJetTagsAll as pfParticleNetJetTagsAll
 
-useReclusteredJets = True
+# !!! set `useReclusteredJets = True ` if you need to recluster jets (e.g., to adopt a new Puppi tune) !!!
+useReclusteredJets = False
 jetR = 0.8
 
 bTagDiscriminators = [
@@ -131,9 +133,6 @@ if useReclusteredJets:
         btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll,
         postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
-    process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addTagInfos = cms.bool(True)
-    process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addBTagInfo = cms.bool(True)
-
     srcJets = cms.InputTag('selectedUpdatedPatJetsAK8WithPuppiDaughters')
 else:
     updateJetCollection(
@@ -143,9 +142,6 @@ else:
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
         btagDiscriminators=['None'],
     )
-    process.updatedPatJetsTransientCorrected.addTagInfos = cms.bool(True)
-    process.updatedPatJetsTransientCorrected.addBTagInfo = cms.bool(True)
-
     srcJets = cms.InputTag('selectedUpdatedPatJets')
 # ---------------------------------------------------------
 from PhysicsTools.PatAlgos.tools.helpers import getPatAlgosToolsTask, addToProcessAndTask
