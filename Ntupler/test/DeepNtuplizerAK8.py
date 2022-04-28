@@ -100,10 +100,6 @@ from RecoBTag.ONNXRuntime.pfParticleNet_cff import _pfParticleNetJetTagsAll as p
 useReclusteredJets = True
 jetR = 0.8
 
-bTagInfos = [
-    'pfBoostedDoubleSVAK8TagInfos'
-]
-
 bTagDiscriminators = [
     'pfCombinedInclusiveSecondaryVertexV2BJetTags',
     'pfBoostedDoubleSecondaryVertexAK8BJetTags',
@@ -133,7 +129,6 @@ if useReclusteredJets:
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
         btagDiscriminators=bTagDiscriminators + pfDeepBoostedJetTagsAll + pfParticleNetJetTagsAll,
-        btagInfos=bTagInfos,
         postfix='AK8WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
     )
     process.updatedPatJetsTransientCorrectedAK8WithPuppiDaughters.addTagInfos = cms.bool(True)
@@ -147,7 +142,6 @@ else:
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
         btagDiscriminators=['None'],
-        btagInfos=bTagInfos,
     )
     process.updatedPatJetsTransientCorrected.addTagInfos = cms.bool(True)
     process.updatedPatJetsTransientCorrected.addBTagInfo = cms.bool(True)

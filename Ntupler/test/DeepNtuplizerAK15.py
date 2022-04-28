@@ -75,10 +75,6 @@ from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 useReclusteredJets = True
 jetR = 1.5
 
-bTagInfos = [
-    'pfBoostedDoubleSVAK8TagInfos'
-]
-
 bTagDiscriminators = [
     'pfCombinedInclusiveSecondaryVertexV2BJetTags',
     'pfBoostedDoubleSecondaryVertexAK8BJetTags'
@@ -103,7 +99,6 @@ updateJetCollection(
    rParam=jetR,
    jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
    btagDiscriminators=bTagDiscriminators,
-   btagInfos=bTagInfos,
    postfix='AK15WithPuppiDaughters',  # needed to tell the producers that the daughters are puppi-weighted
 )
 process.updatedPatJetsTransientCorrectedAK15WithPuppiDaughters.addTagInfos = cms.bool(True)
