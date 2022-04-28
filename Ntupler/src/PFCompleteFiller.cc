@@ -127,6 +127,9 @@ bool PFCompleteFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t 
       data.fillMulti<float>("pfcand_phirel", reco::deltaPhi(*packed_cand, sv));
       
       data.fillMulti<float>("pfcand_etarel", etasign * (packed_cand->eta() - sv.eta()));
+
+      //std::cout << " TEMP:  dR is " << reco::deltaR(*packed_cand, sv) << ", jet dR=" << jetR_ << std::endl;
+
       data.fillMulti<float>("pfcand_deltaR", reco::deltaR(*packed_cand, sv));
       data.fillMulti<float>("pfcand_abseta", std::abs(packed_cand->eta()));
       

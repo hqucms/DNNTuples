@@ -107,6 +107,9 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   // (Can't do in DeepNtuplizer bc can't pass results; can't do in fill() bc need all SVs)
   // Note:  sv results can be stored as an array; SV order should not change
   matchedIDs = new int[SVs->size()];  // NOTE:  idxsv should give you the nth entry of matchedIDs
+  lightdr    = new float[SVs->size()];
+  hadrdr     = new float[SVs->size()];
+  light_dq   = new int[SVs->size()];
 
   //check num of good jets
   int n_good_jets = 0;
@@ -121,11 +124,14 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   //std::cout << "Found " << n_good_jets << " good jets" << std::endl;
   //std::cout << "Init SVs: " << SVs->size() << std::endl;
 
-  // if sv close to a jet, assign ID of -999 and ignore it
-  /*
+  // if sv close to a jet, assign ID of -2 and ignore it
+  
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
     matchedIDs[i] = -1;  // initialize
+    lightdr[i] = 10;
+    hadrdr[i] = 10;
+    light_dq[i] = -1;
     for (unsigned j=0; j<jets->size(); j++) {
       const auto& jet = jets->at(j);
       if (  (reco::deltaR(jet, sv) < 0.4)
@@ -133,23 +139,27 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
          && (std::abs(jet.eta()) < 2.5)) {
          //&& (jet.hadronFlavour() & 4) ) {  // not 100% sure whether this is correct
          //&& (jet.jetID() & 4) ) {  // don't know how to add this...
-        matchedIDs[i] = -999;  // -999 = ignore
+        matchedIDs[i] = -2;  // -2 = ignore
         //std::cout << "     SV " << i << " close to jet " << j << std::endl;
-      } else if (  (reco::deltaR(jet, sv) < 0.50)
-         && (jet.pt() > 35)
-         && (std::abs(jet.eta()) < 2.7)) {
-        //std::cout << "   close match" << std::endl;
       }
     }
+    //if (matchedIDs[i] == -2) {
+    //  std::cout << "  SV " << i << " is unmatched" << std::endl;
+    //}
   }
-  */
 
+  /*std::cout << "CURRENT SV LIST:" << std::endl;
+  for (unsigned i=0; i<SVs->size(); i++) {
+    std::cout << "(" << i << ", " << matchedIDs[i] << "),  ";
+  }
+  std::cout << std::endl;
+  */
   // - create full list of (sv, hadr pairs); dr-sorted
   //std::cout << "Jet-free SVs: " << jet_free_svs << std::endl;
   std::vector<std::tuple<float, unsigned, unsigned>> pairList; // sv num, had num
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
-    if (matchedIDs[i] == -999) continue; // if sv is near a jet, skip it
+    if (matchedIDs[i] == -2) continue; // if sv is near a jet, skip it
     //std::cout << "found sv " << i << std::endl;
     for (unsigned j=0; j<particles->size(); j++) {
       const auto& gp = particles->at(j);
@@ -174,6 +184,7 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
     std::tuple<float, unsigned, unsigned> sel_tuple = pairList[0];
     const auto& gp = particles->at(std::get<2>(sel_tuple));
     matchedIDs[std::get<1>(sel_tuple)] = hadronFlavor(gp); // matchedIDs[sv#] = gen hadron ID
+    hadrdr[std::get<1>(sel_tuple)] = std::get<0>(sel_tuple);
     //if (hadronFlavor(gp) > 10) {
     //  std::cout << "  ASSIGNED SV " << std::get<1>(sel_tuple) << " to part " << std::get<2>(sel_tuple) << ", hadr type=" << hadronFlavor(gp) << std::endl;
     //}
@@ -192,26 +203,24 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   //std::cout << "Finished removing" << std::endl;
 
   // - find lights in unmatched SVs (if dR>0.8 for all hadr)
-  // note: currently finding too many lights
-  int unmatched = 0;
-  for (unsigned i=0; i<SVs->size(); i++) {
-    if (matchedIDs[i] == -1) unmatched += 1;
-  }
-  //std::cout << "*Unmatched SVs: " << unmatched << std::endl;
 
-  lightdr = 10;  //unphysically high by default, I think
   std::vector<std::tuple<float, unsigned, unsigned>> pairList_; // sv num, had num
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
     bool isLight = true;
-    if (matchedIDs[i] == -999) continue; // if sv is near a jet, skip it
+    if (matchedIDs[i] == -2) continue; // if sv is near a jet, skip it
+    float dr_dq = 1;  // dR of closest pfcand that DQed the SV as a light
     for (unsigned j=0; j<particles->size(); j++) {
       const auto& gp = particles->at(j);
       if ((hadronFlavor(gp) == 4 || hadronFlavor(gp) == 5 || hadronFlavor(gp) == 10)
           && reco::deltaR(gp, sv) < 0.8) {
         //pairList_.push_back(std::tuple<float, unsigned, unsigned>(deltaR(gp, sv), i, j));
         isLight = false;
-        if (reco::deltaR(gp, sv) < lightdr) lightdr = reco::deltaR(gp, sv);
+        if (reco::deltaR(gp, sv) < dr_dq && reco::deltaR(gp, sv) > 0.4) {
+          light_dq[i] = hadronFlavor(gp); // store flav of part that DQed the SV
+          dr_dq = reco::deltaR(gp, sv);
+        }
+        if (reco::deltaR(gp, sv) < lightdr[i]) lightdr[i] = reco::deltaR(gp, sv);
       }
     }
     if (isLight) {
@@ -219,29 +228,14 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
       matchedIDs[i] = 0;
       //std::cout << "  SV " << i << " is light" << std::endl;
     }
-    else if (matchedIDs[i] == -1) {
-      //std::cout << "  SV " << i << " is unassigned" << std::endl;
-    }
   }
-  /*
-  //std::cout << "Finalizing matching" << std::endl;
-  std::cout << "pairList_ size is " << pairList_.size() << std::endl;
+
+  /*std::cout << "FINAL SV LIST:" << std::endl;
   for (unsigned i=0; i<SVs->size(); i++) {
-    // if SV not found in pairList, call it a light
-    bool isLight = true;
-    for (unsigned j=0; j<pairList_.size(); j++) {
-      std::tuple<float, unsigned, unsigned> sel_tuple = pairList_[j];
-      if (std::get<1>(sel_tuple) == i) isLight = false;
-    }
-    if (isLight) matchedIDs[i] = 0;
+    std::cout << matchedIDs[i] << ",  ";
   }
+  std::cout << std::endl;
   */
-
-
-  //finally, move -999s to -1s (now okay to ignore these)
-  //for (unsigned i = 0; i<SVs->size(); i++) {
-  //  if (matchedIDs[i] == -999) matchedIDs[i] = -1;
-  //}
 
   /*std::cout << "Matching results: [" << std::endl;
   for (unsigned i=0; i<SVs->size(); i++) {
@@ -255,6 +249,7 @@ void SVFiller::book() {
 
   data.add<int>("n_sv", 0);
   data.add<float>("nsv", 0);
+  data.add<int>("n_pv", 0);
 
   // basic kinematics
   //data.add<float>("sv_ptrel"); // old jet vars
@@ -282,7 +277,7 @@ void SVFiller::book() {
   data.add<float>("sv_chi2", -5);
   data.add<float>("sv_ndf", -5);
   data.add<float>("sv_normchi2", -35000);
-  data.add<float>("sv_dxy", -5);
+  data.add<float>("sv_dxy", -1);
   data.add<float>("sv_dxyerr", -1);
   data.add<float>("sv_dxysig", -100);
   data.add<float>("sv_d3d", -5);
@@ -292,8 +287,18 @@ void SVFiller::book() {
   data.add<float>("sv_phi", -5);
   data.add<float>("sv_neardr", -1); // nearest jet with dR>0.1
   data.add<float>("sv_lightdr", -1); // lowest dR of nearby 
+  data.add<float>("sv_hadrdr", -1); // if matched, dR w/ matched part; else 10.
+  data.add<int>("sv_light_dq", -1); // flav of the particle that DQed the SV from being a light
 
   data.add<float>("sv_gen_flavor", -1);
+
+  // NEW, for reweighting:
+  data.add<int>("sv_sample_label", -1);
+  // Number of c/bs in cone around SV (ignoring cs produced from a b)
+  data.add<int>("sv_n_c", -1);
+  data.add<int>("sv_n_b", -1);
+  // Number of cfromb's in cone
+  data.add<int>("sv_n_cb", -1);
 
 }
 
@@ -312,16 +317,33 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
         (std::abs(jet.eta()) < 2.5)) {
       if (reco::deltaR(jet, sv) < dr_min) {
         dr_min = reco::deltaR(jet, sv);
+        if (reco::deltaR(jet, sv) < 0.4 && matchedIDs[svidx] == -1)
+          std::cout << "     SV light " << svidx << " is near jet " << j << ", dR=" << reco::deltaR(jet, sv) << std::endl;
       }
     }
   }
   if (dr_min < 0.1) return false;
 
-  if (matchedIDs[svidx]!=10 && matchedIDs[svidx]!=5 && matchedIDs[svidx]!=4 && matchedIDs[svidx]!=0) {
-    //std::cout << "ASSIGNED " << matchedIDs[svidx] << std::endl;
-    matchedIDs[svidx] = -1;
+
+  int n_b = 0; // # bs in cone
+  int n_c = 0; // # cs (lone, not from b)
+  int n_cb = 0; // # c<-bs in cone
+  for (unsigned j=0; j<particles->size(); j++) {
+    const auto& gp = particles->at(j);
+    int flav = hadronFlavor(gp);
+    if (flav==4) n_c++;
+    if (flav==5) n_b++;
+    if (flav==10) n_cb++;
   }
+
+
+  //if (matchedIDs[svidx]!=10 && matchedIDs[svidx]!=5 && matchedIDs[svidx]!=4 && matchedIDs[svidx]!=0) {
+  //  //std::cout << "ASSIGNED " << matchedIDs[svidx] << std::endl;
+  //  matchedIDs[svidx] = -1;
+  //}
   data.fill<float>("sv_gen_flavor", matchedIDs[svidx]);
+
+  data.fill<int>("n_pv", vertices->size());
 
   data.fill<float>("sv_pt", sv.pt());
   data.fill<float>("sv_eta", sv.eta());
@@ -357,7 +379,18 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fill<float>("sv_phi", sv.phi());
 
   data.fill<float>("sv_neardr", dr_min);
-  data.fill<float>("sv_lightdr", lightdr);
+  data.fill<float>("sv_lightdr", lightdr[svidx]);
+  data.fill<float>("sv_hadrdr", hadrdr[svidx]);
+  data.fill<int>("sv_light_dq", light_dq[svidx]);
+
+  data.fill<int>("sv_sample_label", 0);
+  data.fill<int>("sv_n_c", n_c);
+  data.fill<int>("sv_n_b", n_b);
+  data.fill<int>("sv_n_cb", n_cb);
+
+  if(matchedIDs[svidx] > -2) {
+    std::cout << "Matched SV " << svidx << ", neardr=" << dr_min << std::endl;
+  }
 
   return true;
 }

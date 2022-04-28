@@ -38,6 +38,7 @@ private:
   virtual void endJob() override;
 
   double jetR = -1;
+  double pfcandR = -1;
   bool isPuppi = true;
 
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
@@ -73,7 +74,9 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
   //FatJetInfoFiller *fjinfo = new FatJetInfoFiller("", jetR);
   //addModule(fjinfo);
 
-  SVFiller *sv = new SVFiller("", jetR);
+  std::cout << "TEMP in deepntuplizer.cc:  jetR=" << jetR << std::endl;
+  SVFiller *sv = new SVFiller("", jetR);  // note:  jetR currently does nothing when passed in; should probably stay that way
+  // (jetR performs different roles in sv/pf fillers)
   addModule(sv);
 
   PFCompleteFiller *parts = new PFCompleteFiller("", jetR);

@@ -46,7 +46,9 @@ private:
   edm::Handle<reco::GenParticleCollection> particles;
 
   int *matchedIDs; //array of all gen labels in the event
-  float lightdr;
+  float *lightdr;
+  float *hadrdr; // array of all dR vals of matched hadrons
+  int *light_dq; // if particle gets DQed from being a light, specify ID of particle that DQed it.
 
 private:
   static Measurement1D vertexDxy(const reco::VertexCompositePtrCandidate &svcand, const reco::Vertex &pv);

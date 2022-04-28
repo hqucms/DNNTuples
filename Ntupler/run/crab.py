@@ -9,6 +9,8 @@ import re
 import logging
 import CRABClient
 
+import glob
+
 
 def configLogger(name, loglevel=logging.INFO):
     # define a Handler which writes INFO messages or higher to the sys.stderr
@@ -166,12 +168,26 @@ def createConfig(args, dataset):
     if len(args.input_files) > 0:
         config.JobType.inputFiles = args.input_files
 
-    config.Data.inputDBS = 'global'
-    config.Data.inputDataset = dataset
-    config.Data.splitting = args.splitting
-    config.Data.unitsPerJob = args.units_per_job
-    if args.max_units > 0:
-        config.Data.totalUnits = args.max_units
+    # ***NEW***
+    if args.local_dataset == '':
+        config.Data.inputDBS = 'global'
+        config.Data.inputDataset = dataset
+        config.Data.splitting = args.splitting
+        config.Data.unitsPerJob = args.units_per_job
+        if args.max_units > 0:
+            config.Data.totalUnits = args.max_units
+    else:
+        config.Data.inputDBS = 'global'
+        #config.Data.inputDataset = dataset
+        # Get all input files recursively
+        filelist = glob.glob(args.local_dataset + '*/*.root')[:10]
+        config.Data.userInputFiles = ['root://eoscms.cern.ch/' + f for f in filelist]
+        config.Data.splitting = args.splitting
+        config.Data.unitsPerJob = args.units_per_job
+        if args.max_units > 0:
+            config.Data.totalUnits = args.max_units
+
+
     if args.no_publication:
         config.Data.publication = False
     config.Data.outputDatasetTag = args.tag + '_' + vername
@@ -573,6 +589,11 @@ def main():
     parser.add_argument('--summary',
                         action='store_true', default=False,
                         help='Print job status summary from the log file. Default: %(default)s'
+                        )
+    # NEW, for local files
+    parser.add_argument('--local-dataset',
+                        default='',
+                        help='ADDED:  path to local dataset.  Overrides other dataset options.  If subdirs, take all.'
                         )
     args = parser.parse_args()
 
