@@ -204,7 +204,6 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
   // - find lights in unmatched SVs (if dR>0.8 for all hadr)
 
-  std::vector<std::tuple<float, unsigned, unsigned>> pairList_; // sv num, had num
   for (unsigned i=0; i<SVs->size(); i++) {
     const auto& sv = SVs->at(i);
     bool isLight = true;
@@ -214,7 +213,6 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
       const auto& gp = particles->at(j);
       if ((hadronFlavor(gp) == 4 || hadronFlavor(gp) == 5 || hadronFlavor(gp) == 10)
           && reco::deltaR(gp, sv) < 0.8) {
-        //pairList_.push_back(std::tuple<float, unsigned, unsigned>(deltaR(gp, sv), i, j));
         isLight = false;
         if (reco::deltaR(gp, sv) < dr_dq && reco::deltaR(gp, sv) > 0.4) {
           light_dq[i] = hadronFlavor(gp); // store flav of part that DQed the SV
@@ -331,7 +329,7 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   for (unsigned j=0; j<particles->size(); j++) {
     const auto& gp = particles->at(j);
     int flav = hadronFlavor(gp);
-    if (flav==4) n_c++;
+    if (flav==4 || flav==10) n_c++;
     if (flav==5) n_b++;
     if (flav==10) n_cb++;
   }
@@ -388,9 +386,6 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fill<int>("sv_n_b", n_b);
   data.fill<int>("sv_n_cb", n_cb);
 
-  if(matchedIDs[svidx] > -2) {
-    std::cout << "Matched SV " << svidx << ", neardr=" << dr_min << std::endl;
-  }
 
   return true;
 }
