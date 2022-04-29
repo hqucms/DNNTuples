@@ -2,13 +2,13 @@
 
 ## Setup
 ```
-# use CMSSW_11_1_0_pre8 which has Puppi V14
-cmsrel CMSSW_11_1_0
-cd CMSSW_11_1_0/src
+# use CMSSW_12_3_1
+cmsrel CMSSW_12_3_1
+cd CMSSW_12_3_1/src
 cmsenv
 
 # clone this repo into "DeepNTuples" directory
-git clone git@github.com:hqucms/DNNTuples.git DeepNTuples -b ak4/UL/11_1_X
+git clone git@github.com:hqucms/DNNTuples.git DeepNTuples -b dev/ak4/Run3/12_4_X
 
 scram b -j8
 ```
@@ -27,7 +27,7 @@ source /cvmfs/cms.cern.ch/common/crab-setup.sh
 
 **Step 1**: use the `crab.py` script to submit the CRAB jobs:
 
-`python crab.py --set-input-dataset -p ../test/DeepNtuplizerAK4[CHS|Puppi].py --site T2_CH_CERN -o /store/user/$USER/DeepNtuples/[version] -t DeepNtuplesAK4-[version] --no-publication -i [ABC].conf -s FileBased -n 1 --work-area crab_projects_[ABC] --send-external [--input_files JEC.db] --dryrun`
+`python3 crab.py --set-input-dataset -p ../test/DeepNtuplizerAK4[CHS|Puppi].py --site T2_CH_CERN -o /store/user/$USER/DeepNtuples/[version] -t DeepNtuplesAK4-[version] --no-publication -i [ABC].conf -s FileBased -n 1 --work-area crab_projects_[ABC] --send-external [--input_files JEC.db] --dryrun`
 
 These command will perform a "dryrun" to print out the CRAB configuration files. Please check everything is correct (e.g., the output path, version number, requested number of cores, etc.) before submitting the actual jobs. To actually submit the jobs to CRAB, just remove the `--dryrun` option at the end.
 

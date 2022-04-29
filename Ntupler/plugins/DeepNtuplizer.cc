@@ -5,6 +5,8 @@
  *      Author: hqu
  */
 
+#include "Compression.h"
+
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
