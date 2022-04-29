@@ -8,6 +8,7 @@
 #ifndef NTUPLER_INTERFACE_PFCOMPLETEFILLER_H_
 #define NTUPLER_INTERFACE_PFCOMPLETEFILLER_H_
 
+#include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "DeepNTuples/BTagHelpers/interface/TrackInfoBuilder.h"
 #include "DataFormats/Candidate/interface/VertexCompositePtrCandidate.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
@@ -36,6 +37,8 @@ protected:
   virtual bool fill(const pat::Jet &jet, size_t jetidx, const JetHelper &jet_helper) override;
 
 private:
+  edm::ESGetToken<TransientTrackBuilder, TransientTrackRecord> transientTrackBuilderToken_;
+
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::Handle<reco::VertexCollection> vertices;
 

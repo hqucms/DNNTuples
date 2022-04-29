@@ -13,6 +13,7 @@
 namespace deepntuples {
 
 void PFCompleteFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) {
+  transientTrackBuilderToken_ = cc.esConsumes<TransientTrackBuilder, TransientTrackRecord>(edm::ESInputTag("", "TransientTrackBuilder"));
   vtxToken_ = cc.consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"));
   svToken_ = cc.consumes<reco::VertexCompositePtrCandidateCollection>(iConfig.getParameter<edm::InputTag>("SVs"));
 }
@@ -20,7 +21,7 @@ void PFCompleteFiller::readConfig(const edm::ParameterSet& iConfig, edm::Consume
 void PFCompleteFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   iEvent.getByToken(vtxToken_, vertices);
   iEvent.getByToken(svToken_, SVs);
-  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", builder_);
+  builder_ = iSetup.getHandle(transientTrackBuilderToken_);
 }
 
 void PFCompleteFiller::book() {

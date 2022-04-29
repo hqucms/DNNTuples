@@ -2,29 +2,15 @@
 
 ## Setup
 ```
-# use CMSSW_10_6_14
-cmsrel CMSSW_10_6_14
-cd CMSSW_10_6_14/src
+# use CMSSW_12_3_1
+cmsrel CMSSW_12_3_1
+cd CMSSW_12_3_1/src
 cmsenv
 
-scram setup /cvmfs/cms.cern.ch/slc7_amd64_gcc820/cms/cmssw/CMSSW_11_1_2/config/toolbox/slc7_amd64_gcc820/tools/selected/json.xml
-
-git cms-merge-topic -u lathomas:PUPPIUpdate
-git cms-merge-topic -u hqucms:dev/particle-net-onnxrt-106x
-
-git cms-addpkg PhysicsTools/ONNXRuntime
-
 # clone this repo into "DeepNTuples" directory
-git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/UL/10_6_X
-
-# Use a faster version of ONNXRuntime
-$CMSSW_BASE/src/DeepNTuples/Ntupler/scripts/install_onnxruntime.sh
+git clone git@github.com:hqucms/DNNTuplesAK8.git DeepNTuples -b dev/Run3/12_4_X
 
 scram b -j8
-
-# install the data files
-git clone git@github.com:hqucms/RecoBTag-Combined.git -b ParticleNet-V01-Full.rc2-MD.rc6 $CMSSW_BASE/external/$SCRAM_ARCH/data/RecoBTag/Combined/data
-
 ```
 
 ## Submit jobs via CRAB
@@ -41,7 +27,7 @@ source /cvmfs/cms.cern.ch/common/crab-setup.sh
 
 **Step 1**: use the `crab.py` script to submit the CRAB jobs:
 
-`python crab.py --set-input-dataset -p ../test/DeepNtuplizerAK8.py --site T2_CH_CERN -o /store/user/$USER/DeepNtuples/[version] -t DeepNtuplesAK8-[version] --no-publication -i [ABC].conf -s FileBased -n 5 --work-area crab_projects_[ABC] --send-external [--input_files JEC.db] --dryrun`
+`python3 crab.py --set-input-dataset -p ../test/DeepNtuplizerAK8.py --site T2_CH_CERN -o /store/user/$USER/DeepNtuples/[version] -t DeepNtuplesAK8-[version] --no-publication -i [ABC].conf -s FileBased -n 5 --work-area crab_projects_[ABC] --send-external [--input_files JEC.db] --dryrun`
 
 These command will perform a "dryrun" to print out the CRAB configuration files. Please check everything is correct (e.g., the output path, version number, requested number of cores, etc.) before submitting the actual jobs. To actually submit the jobs to CRAB, just remove the `--dryrun` option at the end.
 
