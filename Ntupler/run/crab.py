@@ -180,7 +180,7 @@ def createConfig(args, dataset):
         config.Data.inputDBS = 'global'
         #config.Data.inputDataset = dataset
         # Get all input files recursively
-        filelist = glob.glob(args.local_dataset + '*/*.root')[:10]
+        filelist = glob.glob(args.local_dataset + '*/*.root')
         config.Data.userInputFiles = ['root://eoscms.cern.ch/' + f for f in filelist]
         config.Data.splitting = args.splitting
         config.Data.unitsPerJob = args.units_per_job

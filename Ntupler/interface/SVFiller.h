@@ -38,12 +38,16 @@ private:
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
   //edm::EDGetTokenT<reco::GenJetCollection> jetToken_;
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
+  edm::EDGetTokenT<reco::GenParticleRefVector> bHadronsToken_;
+  edm::EDGetTokenT<reco::GenParticleRefVector> cHadronsToken_;
 
   edm::Handle<reco::VertexCollection> vertices;
   edm::Handle<reco::VertexCompositePtrCandidateCollection> SVs;
   // NEW, matching
   edm::Handle<edm::View<pat::Jet>> jets;  //<reco::GenJetCollection> jets;
   edm::Handle<reco::GenParticleCollection> particles;
+  edm::Handle<reco::GenParticleRefVector> bhadrons;
+  edm::Handle<reco::GenParticleRefVector> chadrons;
 
   int *matchedIDs; //array of all gen labels in the event
   float *lightdr;

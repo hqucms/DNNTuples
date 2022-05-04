@@ -1,5 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 
+#from PhysicsTools.NanoAOD.nano_eras_cff import *
+from PhysicsTools.NanoAOD.common_cff import *
+
 # ---------------------------------------------------------
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
@@ -60,16 +63,6 @@ process.TFileService = cms.Service("TFileService",
                                    fileName=cms.string(options.outputFile))
 
 process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(options.maxEvents))
-
-# NEW, to avoid duplicate events, default 100
-seed = 101
-process.add_( cms.Service("RandomNumberGeneratorService",
-        externalLHEProducer = cms.PSet(
-            initialSeed = cms.untracked.uint32(seed),
-            engineName = cms.untracked.string('HepJamesRandom')
-        )
-    )
-)
 
 process.source = cms.Source('PoolSource',
     fileNames=cms.untracked.vstring(options.inputFiles),
@@ -171,10 +164,22 @@ process.ak4GenJetsWithNuMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR
     resolveAmbiguities=cms.bool(True),  # Forbid two RECO objects to match to the same GEN object
     resolveByMatchQuality=cms.bool(False),  # False = just match input in order; True = pick lowest deltaR pair first
 )
+
+
+# NOTE:  ALSO NEW, from:  https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/jetMC_cff.py#L32
+process.patJetPartonsNano = cms.EDProducer('HadronAndPartonSelector',
+    src = cms.InputTag("generator"),
+    particles = cms.InputTag("prunedGenParticles"),
+    partonMode = cms.string("Auto"),
+    fullChainPhysPartons = cms.bool(True)
+)
+
 process.genJetTask = cms.Task(
     process.ak4GenJetsWithNu,
     process.ak4GenJetsWithNuMatch,
+    process.patJetPartonsNano,
 )
+
 
 # DeepNtuplizer
 process.load("DeepNTuples.Ntupler.DeepNtuplizer_cfi")
@@ -183,6 +188,7 @@ process.deepntuplizer.isPuppiJets = isPuppiJets
 process.deepntuplizer.bDiscriminators = bTagDiscriminators
 # NOTE: NEW
 process.deepntuplizer.jetR = jetR
+
 
 process.deepntuplizer.genJetsMatch = 'ak4GenJetsWithNuMatch'
 

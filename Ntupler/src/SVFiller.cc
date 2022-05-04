@@ -86,6 +86,8 @@ void SVFiller::readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollect
   //jetToken_ = cc.consumes<reco::GenJetCollection>(iConfig.getParameter<edm::InputTag>("jets"));
   jetToken_ = cc.consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"));
   genParticlesToken_ = cc.consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("genParticles"));
+  bHadronsToken_ = cc.consumes<reco::GenParticleRefVector>(iConfig.getParameter<edm::InputTag>("bHadrons"));
+  cHadronsToken_ = cc.consumes<reco::GenParticleRefVector>(iConfig.getParameter<edm::InputTag>("cHadrons"));
 }
 
 void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
@@ -94,6 +96,8 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   iEvent.getByToken(svToken_, SVs);
   iEvent.getByToken(jetToken_, jets);
   iEvent.getByToken(genParticlesToken_, particles);
+  iEvent.getByToken(bHadronsToken_, bhadrons);
+  iEvent.getByToken(cHadronsToken_, chadrons);
 
   /*std::cout << "TEMP:  PRINT GEN PARTICLE INFO" << std::endl;
   printGenInfoHeader();
@@ -295,8 +299,6 @@ void SVFiller::book() {
   // Number of c/bs in cone around SV (ignoring cs produced from a b)
   data.add<int>("sv_n_c", -1);
   data.add<int>("sv_n_b", -1);
-  // Number of cfromb's in cone
-  data.add<int>("sv_n_cb", -1);
 
 }
 
@@ -325,13 +327,12 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
 
   int n_b = 0; // # bs in cone
   int n_c = 0; // # cs (lone, not from b)
-  int n_cb = 0; // # c<-bs in cone
-  for (unsigned j=0; j<particles->size(); j++) {
-    const auto& gp = particles->at(j);
-    int flav = hadronFlavor(gp);
-    if (flav==4 || flav==10) n_c++;
-    if (flav==5) n_b++;
-    if (flav==10) n_cb++;
+
+  for (j=0; j<bhadrons->size(); j++) {
+    if (reco::deltaR(bhadrons->at(j), sv) < 0.4) n_b++;
+  }
+  for (j=0; j<chadrons->size(); j++) {
+    if (reco::deltaR(chadrons->at(j), sv) < 0.4) n_c++;
   }
 
 
@@ -381,10 +382,9 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fill<float>("sv_hadrdr", hadrdr[svidx]);
   data.fill<int>("sv_light_dq", light_dq[svidx]);
 
-  data.fill<int>("sv_sample_label", 0);
+  data.fill<int>("sv_sample_label", 2);
   data.fill<int>("sv_n_c", n_c);
   data.fill<int>("sv_n_b", n_b);
-  data.fill<int>("sv_n_cb", n_cb);
 
 
   return true;

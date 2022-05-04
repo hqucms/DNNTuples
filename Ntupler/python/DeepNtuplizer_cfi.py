@@ -20,4 +20,6 @@ deepntuplizer = cms.EDAnalyzer('DeepNtuplizer',
                                 isHerwig      = cms.bool(False),
                                 isMadGraph    = cms.bool(False),
                                 isTrainSample = cms.untracked.bool(True),
+                                bHadrons = cms.InputTag("patJetPartonsNano","bHadrons"),
+                                cHadrons = cms.InputTag("patJetPartonsNano","cHadrons"),
                                 )
