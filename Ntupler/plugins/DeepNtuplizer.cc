@@ -59,6 +59,7 @@ private:
 
 DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
     jetR(iConfig.getParameter<double>("jetR")),
+    pfcandR(iConfig.getParameter<double>("pfcandR")),
     isPuppi(iConfig.getParameter<bool>("isPuppiJets")),
     jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
     candToken_(consumes<edm::View<reco::Candidate>>(iConfig.getParameter<edm::InputTag>("pfcands"))),
@@ -67,19 +68,11 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
 {
 
   // register modules
-  // OLD - not needed for latest ntupler
-  //JetInfoFiller *jetinfo = new JetInfoFiller("", jetR);
-  //addModule(jetinfo);
-
-  //FatJetInfoFiller *fjinfo = new FatJetInfoFiller("", jetR);
-  //addModule(fjinfo);
-
-  std::cout << "TEMP in deepntuplizer.cc:  jetR=" << jetR << std::endl;
-  SVFiller *sv = new SVFiller("", jetR);  // note:  jetR currently does nothing when passed in; should probably stay that way
+  SVFiller *sv = new SVFiller("", jetR, pfcandR);  // note:  jetR currently does nothing when passed in; should probably stay that way
   // (jetR performs different roles in sv/pf fillers)
   addModule(sv);
 
-  PFCompleteFiller *parts = new PFCompleteFiller("", jetR);
+  PFCompleteFiller *parts = new PFCompleteFiller("", jetR, pfcandR);
   addModule(parts);
 
   // read config and init modules

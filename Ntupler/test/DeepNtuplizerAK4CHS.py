@@ -1,15 +1,12 @@
 import FWCore.ParameterSet.Config as cms
 
-#from PhysicsTools.NanoAOD.nano_eras_cff import *
-from PhysicsTools.NanoAOD.common_cff import *
-
 # ---------------------------------------------------------
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
-#options.inputFiles = '/store/mc/RunIISummer20UL18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/20000/0EE3441F-AF29-7D41-935B-3A8209BD4DD2.root'
-options.inputFiles='/eos/cms/store/cmst3/group/vhcc/hc/samples/HPlusCharm_H4L_JHUGEN_3FS_M125_13TeV_amcatnlo_pythia8_MINIAOD_v3/UL2018-MINIAOD/211028_065528/0001/step6_1000.root'
+options.inputFiles = '/store/mc/RunIISummer20UL18MiniAOD/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v11_L1v1-v2/20000/0EE3441F-AF29-7D41-935B-3A8209BD4DD2.root'
+# options.inputFiles = '/store/cmst3/group/vhcc/hc/samples/HPlusCharm_H4L_JHUGEN_3FS_M125_13TeV_amcatnlo_pythia8_MINIAOD_v3/UL2018-MINIAOD/211028_065528/0001/step6_1000.root'
 
 #options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/BulkGravitonToHHTo4Q_MX-600to6000_MH-15to250_part2_TuneCP5_13TeV-madgraph_pythia8/MINIAODSIM/multigridpack_106X_mc2017_realistic_v6-v1/50000/FB46C2C2-73A4-A64C-A3D7-FC47C6A48871.root'
 # options.inputFiles = '/store/mc/RunIISummer19UL17MiniAOD/QCD_Pt-15to7000_TuneCP5_Flat_13TeV_pythia8/MINIAODSIM/106X_mc2017_realistic_v6_ext2-v2/60000/E0502E95-AA7E-B441-9277-498113BA458C.root'
@@ -54,7 +51,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 process.options = cms.untracked.PSet(
     allowUnscheduled = cms.untracked.bool(True),
-    wantSummary=cms.untracked.bool(False)
+    wantSummary=cms.untracked.bool(True)
 )
 
 print ('Using output file ' + options.outputFile)
@@ -114,9 +111,8 @@ if era == 'Summer19UL17':
 from PhysicsTools.PatAlgos.tools.jetTools import updateJetCollection
 
 isPuppiJets = False
-# was jetR = 0.4 #0.02
-maxDeltaR = 0.4
-jetR = 0.4 # change this
+jetR = 0.4  # change this (reject SVs if deltaR(sv, jet) < jetR)
+pfcandR = 0.4  # (for each sV, store all pfcands w/ deltaR(sv, pf) < pfcandR; also used for matching SV to b and c hadrons)
 
 bTagDiscriminators = [
     'pfDeepFlavourJetTags:probb',
@@ -159,7 +155,7 @@ process.ak4GenJetsWithNuMatch = cms.EDProducer("GenJetMatcher",  # cut on deltaR
     mcPdgId=cms.vint32(),  # n/a
     mcStatus=cms.vint32(),  # n/a
     checkCharge=cms.bool(False),  # n/a
-    maxDeltaR=cms.double(maxDeltaR),  #(jetR),  # Minimum deltaR for the match
+    maxDeltaR=cms.double(jetR),  # Minimum deltaR for the match
     # maxDPtRel   = cms.double(3.0),                  # Minimum deltaPt/Pt for the match (not used in GenJetMatcher)
     resolveAmbiguities=cms.bool(True),  # Forbid two RECO objects to match to the same GEN object
     resolveByMatchQuality=cms.bool(False),  # False = just match input in order; True = pick lowest deltaR pair first
@@ -188,6 +184,7 @@ process.deepntuplizer.isPuppiJets = isPuppiJets
 process.deepntuplizer.bDiscriminators = bTagDiscriminators
 # NOTE: NEW
 process.deepntuplizer.jetR = jetR
+process.deepntuplizer.pfcandR = pfcandR
 
 
 process.deepntuplizer.genJetsMatch = 'ak4GenJetsWithNuMatch'

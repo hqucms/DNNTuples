@@ -15,8 +15,8 @@ namespace deepntuples {
 
 class SVFiller: public NtupleBase {
 public:
-  SVFiller() : SVFiller("", 0.8) {}
-  SVFiller(std::string branchName, double jetR=0.8) : NtupleBase(branchName, jetR) {}
+  SVFiller() : SVFiller("", 0.4, 0.4) {}
+  SVFiller(std::string branchName, double jetR=0.4, double pfcandR=0.4) : NtupleBase(branchName, jetR, pfcandR) {}
   virtual ~SVFiller() {}
 
   // get input parameters from the cfg file
@@ -30,13 +30,12 @@ protected:
   virtual void book() override;
   // fill the branches
   //virtual bool fill(const pat::Jet &jet, size_t jetidx, const JetHelper &jet_helper) override;
-  virtual bool fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> candHandle) override;
+  virtual bool fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> &candHandle) override;
 
 private:
   edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
   edm::EDGetTokenT<reco::VertexCompositePtrCandidateCollection> svToken_;
   edm::EDGetTokenT<edm::View<pat::Jet>> jetToken_;
-  //edm::EDGetTokenT<reco::GenJetCollection> jetToken_;
   edm::EDGetTokenT<reco::GenParticleCollection> genParticlesToken_;
   edm::EDGetTokenT<reco::GenParticleRefVector> bHadronsToken_;
   edm::EDGetTokenT<reco::GenParticleRefVector> cHadronsToken_;
@@ -44,7 +43,7 @@ private:
   edm::Handle<reco::VertexCollection> vertices;
   edm::Handle<reco::VertexCompositePtrCandidateCollection> SVs;
   // NEW, matching
-  edm::Handle<edm::View<pat::Jet>> jets;  //<reco::GenJetCollection> jets;
+  edm::Handle<edm::View<pat::Jet>> jets;
   edm::Handle<reco::GenParticleCollection> particles;
   edm::Handle<reco::GenParticleRefVector> bhadrons;
   edm::Handle<reco::GenParticleRefVector> chadrons;

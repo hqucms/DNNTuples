@@ -115,19 +115,6 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
   hadrdr     = new float[SVs->size()];
   light_dq   = new int[SVs->size()];
 
-  //check num of good jets
-  int n_good_jets = 0;
-  for (unsigned j=0; j<jets->size(); j++) {
-    const auto& jet = jets->at(j);
-    if ((jet.pt() > 40) 
-       && (std::abs(jet.eta()) < 2.5) ) {
-       //&& (jet.hadronFlavour() & 4) ) {
-      n_good_jets++;
-    }
-  }
-  //std::cout << "Found " << n_good_jets << " good jets" << std::endl;
-  //std::cout << "Init SVs: " << SVs->size() << std::endl;
-
   // if sv close to a jet, assign ID of -2 and ignore it
   
   for (unsigned i=0; i<SVs->size(); i++) {
@@ -248,26 +235,23 @@ void SVFiller::readEvent(const edm::Event& iEvent, const edm::EventSetup& iSetup
 }
 
 void SVFiller::book() {
+  // config info, for bookkeeping
+  data.add<float>("jetR", jetR_);
+  data.add<float>("pfcandR", pfcandR_);
 
-  data.add<int>("n_sv", 0);
-  data.add<float>("nsv", 0);
   data.add<int>("n_pv", 0);
 
   // basic kinematics
-  //data.add<float>("sv_ptrel"); // old jet vars
-  //data.add<float>("sv_erel");
-  //data.add<float>("sv_phirel");
-  //data.add<float>("sv_etarel");
-  //data.add<float>("sv_deltaR");
   data.add<float>("sv_pt", -100);
   data.add<float>("sv_eta", 4);
-  data.add<float>("sv_abseta", 4);
+  data.add<float>("sv_phi", -5);
   data.add<float>("sv_mass", -5);
-  data.add<float>("sv_energy", -100);
+  data.add<float>("sv_abseta", 4);
 
   data.add<float>("sv_px", 999);
   data.add<float>("sv_py", 999);
   data.add<float>("sv_pz", 999);
+  data.add<float>("sv_energy", -100);
 
   //data.add<float>("sv_ptrel_log");
   //data.add<float>("sv_erel_log");
@@ -286,7 +270,7 @@ void SVFiller::book() {
   data.add<float>("sv_d3derr", -1);
   data.add<float>("sv_d3dsig", -100);
   data.add<float>("sv_costhetasvpv", -2); //pAngle in nanoAOD
-  data.add<float>("sv_phi", -5);
+
   data.add<float>("sv_neardr", -1); // nearest jet with dR>0.1
   data.add<float>("sv_lightdr", -1); // lowest dR of nearby 
   data.add<float>("sv_hadrdr", -1); // if matched, dR w/ matched part; else 10.
@@ -302,11 +286,7 @@ void SVFiller::book() {
 
 }
 
-//bool SVFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
-bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> candHandle){
-  //match svs to candHandles
-
-
+bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> &candHandle){
   const auto &pv = vertices->at(0);
 
   // New:  add dR info for jets near the SV
@@ -317,24 +297,22 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
         (std::abs(jet.eta()) < 2.5)) {
       if (reco::deltaR(jet, sv) < dr_min) {
         dr_min = reco::deltaR(jet, sv);
-        if (reco::deltaR(jet, sv) < 0.4 && matchedIDs[svidx] == -1)
-          std::cout << "     SV light " << svidx << " is near jet " << j << ", dR=" << reco::deltaR(jet, sv) << std::endl;
       }
     }
   }
-  if (dr_min < 0.1) return false;
-
+  if (dr_min < jetR_) {
+    return false;
+  }
 
   int n_b = 0; // # bs in cone
-  int n_c = 0; // # cs (lone, not from b)
+  int n_c = 0; // # cs in cone (can be from b)
 
-  for (j=0; j<bhadrons->size(); j++) {
-    if (reco::deltaR(bhadrons->at(j), sv) < 0.4) n_b++;
+  for (unsigned j = 0; j < bhadrons->size(); j++) {
+    if (reco::deltaR(*bhadrons->at(j), sv) < pfcandR_) n_b++;
   }
-  for (j=0; j<chadrons->size(); j++) {
-    if (reco::deltaR(chadrons->at(j), sv) < 0.4) n_c++;
+  for (unsigned j = 0; j < chadrons->size(); j++) {
+    if (reco::deltaR(*chadrons->at(j), sv) < pfcandR_) n_c++;
   }
-
 
   //if (matchedIDs[svidx]!=10 && matchedIDs[svidx]!=5 && matchedIDs[svidx]!=4 && matchedIDs[svidx]!=0) {
   //  //std::cout << "ASSIGNED " << matchedIDs[svidx] << std::endl;
@@ -346,16 +324,15 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
 
   data.fill<float>("sv_pt", sv.pt());
   data.fill<float>("sv_eta", sv.eta());
-  data.fill<float>("sv_abseta", std::abs(sv.eta()));
+  data.fill<float>("sv_phi", sv.phi());
   data.fill<float>("sv_mass", sv.mass());
-  data.fill<float>("sv_energy", sv.energy());
-  //NEW
-  data.fill<float>("sv_px", sv.momentum().X());
-  data.fill<float>("sv_py", sv.momentum().Y());
-  data.fill<float>("sv_pz", sv.momentum().Z());
+  data.fill<float>("sv_abseta", std::abs(sv.eta()));
 
-  //data.fill<float>("sv_ptrel_log", catchInfs(std::log(sv->pt()/jet.pt()), -99));
-  //data.fill<float>("sv_erel_log", catchInfs(std::log(sv->energy()/jet.energy()), -99));
+  data.fill<float>("sv_px", sv.px());
+  data.fill<float>("sv_py", sv.py());
+  data.fill<float>("sv_pz", sv.pz());
+  data.fill<float>("sv_energy", sv.energy());
+
   data.fill<float>("sv_pt_log", catchInfs(std::log(sv.pt()), -99));
   data.fill<float>("sv_e_log", catchInfs(std::log(sv.energy()), -99));
     
@@ -375,7 +352,6 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fill<float>("sv_d3derr", d3d.error());
   data.fill<float>("sv_d3dsig", d3d.significance());
   data.fill<float>("sv_costhetasvpv", vertexDdotP(sv, pv));
-  data.fill<float>("sv_phi", sv.phi());
 
   data.fill<float>("sv_neardr", dr_min);
   data.fill<float>("sv_lightdr", lightdr[svidx]);
@@ -383,6 +359,7 @@ bool SVFiller::fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, c
   data.fill<int>("sv_light_dq", light_dq[svidx]);
 
   data.fill<int>("sv_sample_label", 2);
+
   data.fill<int>("sv_n_c", n_c);
   data.fill<int>("sv_n_b", n_b);
 

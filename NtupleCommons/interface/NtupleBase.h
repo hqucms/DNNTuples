@@ -27,8 +27,8 @@ class TreeWriter;
 class NtupleBase {
 public:
   NtupleBase() {}
-  NtupleBase(std::string branchName, double jetR) :
-    branchName_(branchName), jetR_(jetR), data(branchName_) {}
+  NtupleBase(std::string branchName, double jetR, double pfcandR)
+      : branchName_(branchName), jetR_(jetR), pfcandR_(pfcandR), data(branchName_) {}
   virtual ~NtupleBase() {}
 
   // set read mode
@@ -52,7 +52,7 @@ public:
   //  return fill(jet, jetidx, jet_helper);
   //}
   // NEW:
-  bool fillBranches(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> candHandle) {
+  bool fillBranches(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> &candHandle) {
     data.reset();
     return fill(sv, svidx, candHandle);
   }
@@ -66,13 +66,13 @@ protected:
   // fill the data branches to the tree
   //virtual bool fill(const pat::Jet &jet, size_t jetidx, const JetHelper &jet_helper) = 0;
   // NEW:
-  virtual bool fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> candHandle) = 0;
+  virtual bool fill(const reco::VertexCompositePtrCandidate &sv, size_t svidx, const edm::Handle<edm::View<reco::Candidate>> &candHandle) = 0;
 
 protected:
   std::string branchName_;
   double jetR_ = -1;
+  double pfcandR_ = -1;
   TreeData data;
-
 };
 
 } /* namespace deepntuples */
