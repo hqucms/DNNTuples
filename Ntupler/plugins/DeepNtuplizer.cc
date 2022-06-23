@@ -23,7 +23,6 @@
 #include "DeepNTuples/Ntupler/interface/SVFiller.h"
 #include "DeepNTuples/Ntupler/interface/PFCompleteFiller.h"
 
-
 using namespace deepntuples;
 
 class DeepNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources> {
@@ -78,9 +77,8 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
   addModule(parts);
 
   // read config and init modules
-  for(auto& m: modules_)
+  for (auto &m : modules_)
     m->readConfig(iConfig, consumesCollector());
-
 }
 
 DeepNtuplizer::~DeepNtuplizer()

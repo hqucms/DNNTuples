@@ -5,7 +5,7 @@ from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
 
 options.outputFile = 'output.root'
-options.inputFiles = '/store/mc/Run3Winter22MiniAOD/GluGluToBulkGravitonToHHTo4B_M-1000_narrow_WZHtag_TuneCP5_13p6TeV-madgraph-pythia8/MINIAODSIM/122X_mcRun3_2021_realistic_v9-v2/60000/036be098-e99b-4fe5-b7d9-eff4c9f3c339.root'
+options.inputFiles = '/store/mc/RunIISummer20UL18MiniAODv2/QCD_HT1500to2000_TuneCP5_PSWeights_13TeV-madgraph-pythia8/MINIAODSIM/106X_upgrade2018_realistic_v16_L1v1-v1/2550000/001CA706-28B4-B24B-A2F7-63045C2BEB7F.root'
 options.maxEvents = -1
 
 options.register('skipEvents', 0, VarParsing.multiplicity.singleton, VarParsing.varType.int, "skip N events")
@@ -20,7 +20,9 @@ options.register('isTrainSample', True, VarParsing.multiplicity.singleton,
 options.parseArguments()
 
 globalTagMap = {
-    'auto': 'auto:phase1_2021_realistic',
+    'auto': 'auto:phase1_2018_realistic',
+    'UL18': '106X_upgrade2018_realistic_v16_L1v1',
+    'UL17': '106X_mc2017_realistic_v9',
 }
 
 era = 'auto'
@@ -111,6 +113,8 @@ bTagDiscriminators = [
     # 'pfMassIndependentDeepDoubleBvLJetTags:probHbb',
     # 'pfMassIndependentDeepDoubleCvLJetTags:probHcc',
     # 'pfMassIndependentDeepDoubleCvBJetTags:probHcc',
+
+    'pfParticleNetMassRegressionJetTags:mass',
 ]
 
 subjetBTagDiscriminators = ['None']
@@ -140,7 +144,7 @@ else:
         jetSource=cms.InputTag('slimmedJetsAK8'),
         rParam=jetR,
         jetCorrections=('AK8PFPuppi', cms.vstring(['L2Relative', 'L3Absolute']), 'None'),
-        btagDiscriminators=['None'],
+        btagDiscriminators=['pfParticleNetMassRegressionJetTags:mass'],
     )
     srcJets = cms.InputTag('selectedUpdatedPatJets')
 # ---------------------------------------------------------

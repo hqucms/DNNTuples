@@ -2,6 +2,7 @@
 <use name="DataFormats/PatCandidates"/>
 <use name="DataFormats/BTauReco"/>
 <use name="TrackingTools/Records"/>
+<use name="RecoBTag/FeatureTools"/>
 <use name="PhysicsTools/SelectorUtils"/>
 <use name="DeepNTuples/NtupleCommons"/>
 <use name="DeepNTuples/FatJetHelpers"/>
