@@ -30,21 +30,19 @@ void PFCompleteFiller::book() {
   data.add<float>("npfcands", 0);
 
   // no puppi scaled
+  data.addMulti<float>("pfcand_px");
+  data.addMulti<float>("pfcand_py");
+  data.addMulti<float>("pfcand_pz");
+  data.addMulti<float>("pfcand_energy");
+
   data.addMulti<float>("pfcand_pt_nopuppi");
   data.addMulti<float>("pfcand_pt_log_nopuppi");
   data.addMulti<float>("pfcand_e_log_nopuppi");
 
   data.addMulti<float>("pfcand_phirel");
   data.addMulti<float>("pfcand_etarel");
-  // data.addMulti<float>("pfcand_deltaR");
   data.addMulti<float>("pfcand_puppiw");
   data.addMulti<float>("pfcand_abseta");
-
-  data.addMulti<float>("pfcand_drminsvin"); // restricted to within the jet cone
-
-  // use uncorrected pT to order the two subjets
-  data.addMulti<float>("pfcand_dr_uncorrsj1");
-  data.addMulti<float>("pfcand_dr_uncorrsj2");
 
   data.addMulti<float>("pfcand_charge");
   data.addMulti<float>("pfcand_isMu");
@@ -72,6 +70,36 @@ void PFCompleteFiller::book() {
   // track quality
   data.addMulti<float>("pfcand_normchi2");
   data.addMulti<float>("pfcand_quality");
+
+  data.addMulti<float>("pfcand_qoverp");
+  data.addMulti<float>("pfcand_qoverpError");
+
+  data.addMulti<float>("pfcand_nValidPixelHits");
+  data.addMulti<float>("pfcand_nValidPixelBarrelHits");
+  data.addMulti<float>("pfcand_nValidPixelEndcapHits");
+  data.addMulti<float>("pfcand_nValidStripHits");
+  data.addMulti<float>("pfcand_nValidStripTIBHits");
+  data.addMulti<float>("pfcand_nValidStripTIDHits");
+  data.addMulti<float>("pfcand_nValidStripTOBHits");
+  data.addMulti<float>("pfcand_nValidStripTECHits");
+
+  // data.addMulti<float>("pfcand_nLostPixelHits");
+  // data.addMulti<float>("pfcand_nLostPixelBarrelHits");
+  // data.addMulti<float>("pfcand_nLostPixelEndcapHits");
+  // data.addMulti<float>("pfcand_nLostStripHits");
+  // data.addMulti<float>("pfcand_nLostStripTIBHits");
+  // data.addMulti<float>("pfcand_nLostStripTIDHits");
+  // data.addMulti<float>("pfcand_nLostStripTOBHits");
+  // data.addMulti<float>("pfcand_nLostStripTECHits");
+
+  data.addMulti<float>("pfcand_pixelLayers");
+  data.addMulti<float>("pfcand_pixelBarrelLayers");
+  data.addMulti<float>("pfcand_pixelEndcapLayers");
+  data.addMulti<float>("pfcand_stripLayers");
+  data.addMulti<float>("pfcand_stripTIBLayers");
+  data.addMulti<float>("pfcand_stripTIDLayers");
+  data.addMulti<float>("pfcand_stripTOBLayers");
+  data.addMulti<float>("pfcand_stripTECLayers");
 
   // track btag info
   // data.addMulti<float>("pfcand_btagMomentum");
@@ -104,30 +132,20 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
 
     // basic kinematics, valid for both charged and neutral
     // not puppi weighted
+    data.fillMulti<float>("pfcand_px", packed_cand->px());
+    data.fillMulti<float>("pfcand_py", packed_cand->py());
+    data.fillMulti<float>("pfcand_pz", packed_cand->pz());
+    data.fillMulti<float>("pfcand_energy", packed_cand->energy());
+
     data.fillMulti<float>("pfcand_pt_nopuppi", packed_cand->pt());
     data.fillMulti<float>("pfcand_pt_log_nopuppi", catchInfs(std::log(packed_cand->pt()), -99));
     data.fillMulti<float>("pfcand_e_log_nopuppi", catchInfs(std::log(packed_cand->energy()), -99));
 
     data.fillMulti<float>("pfcand_phirel", reco::deltaPhi(*packed_cand, jet));
     data.fillMulti<float>("pfcand_etarel", etasign * (packed_cand->eta() - jet.eta()));
-    // data.fillMulti<float>("pfcand_deltaR", reco::deltaR(*packed_cand, jet));
     data.fillMulti<float>("pfcand_abseta", std::abs(packed_cand->eta()));
 
     data.fillMulti<float>("pfcand_puppiw", jet_helper.getPuppiWeight(cand));
-
-    double minDRin = 2.*jetR_;
-    for (const auto &sv : *SVs){
-      double dr = reco::deltaR(*packed_cand, sv);
-      if (dr < minDRin && reco::deltaR(jet, sv) < jetR_) minDRin = dr;
-    }
-    data.fillMulti<float>("pfcand_drminsvin", minDRin);
-
-    // use uncorrected pT to order the two subjets
-    {
-      const auto& subjets = jet_helper.getUncorrSubJets();
-      data.fillMulti<float>("pfcand_dr_uncorrsj1", subjets.size()>0 ? reco::deltaR(*packed_cand, *subjets.at(0)) : -1);
-      data.fillMulti<float>("pfcand_dr_uncorrsj2", subjets.size()>1 ? reco::deltaR(*packed_cand, *subjets.at(1)) : -1);
-    }
 
     data.fillMulti<float>("pfcand_charge", packed_cand->charge());
     data.fillMulti<float>("pfcand_isEl", std::abs(packed_cand->pdgId())==11);
@@ -162,9 +180,70 @@ bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper&
       const auto *trk = packed_cand->bestTrack();
       data.fillMulti<float>("pfcand_normchi2", catchInfs(trk->normalizedChi2()));
       data.fillMulti<float>("pfcand_quality", trk->qualityMask());
-    }else{
+
+      data.fillMulti<float>("pfcand_qoverp", trk->qoverp());
+      data.fillMulti<float>("pfcand_qoverpError", trk->qoverpError());
+
+      data.fillMulti<float>("pfcand_nValidPixelHits", trk->hitPattern().numberOfValidPixelHits());
+      data.fillMulti<float>("pfcand_nValidPixelBarrelHits", trk->hitPattern().numberOfValidPixelBarrelHits());
+      data.fillMulti<float>("pfcand_nValidPixelEndcapHits", trk->hitPattern().numberOfValidPixelEndcapHits());
+      data.fillMulti<float>("pfcand_nValidStripHits", trk->hitPattern().numberOfValidStripHits());
+      data.fillMulti<float>("pfcand_nValidStripTIBHits", trk->hitPattern().numberOfValidStripTIBHits());
+      data.fillMulti<float>("pfcand_nValidStripTIDHits", trk->hitPattern().numberOfValidStripTIDHits());
+      data.fillMulti<float>("pfcand_nValidStripTOBHits", trk->hitPattern().numberOfValidStripTOBHits());
+      data.fillMulti<float>("pfcand_nValidStripTECHits", trk->hitPattern().numberOfValidStripTECHits());
+
+      // data.fillMulti<float>("pfcand_nLostPixelHits", trk->hitPattern().numberOfLostPixelHits(reco::HitPattern::TRACK_HITS));
+      // data.fillMulti<float>("pfcand_nLostPixelBarrelHits", trk->hitPattern().numberOfLostPixelBarrelHits(reco::HitPattern::MISSING_INNER_HITS));
+      // data.fillMulti<float>("pfcand_nLostPixelEndcapHits", trk->hitPattern().numberOfLostPixelEndcapHits(reco::HitPattern::MISSING_OUTER_HITS));
+      // data.fillMulti<float>("pfcand_nLostStripHits", trk->hitPattern().numberOfLostStripHits(reco::HitPattern::TRACK_HITS));
+      // data.fillMulti<float>("pfcand_nLostStripTIBHits", trk->hitPattern().numberOfLostStripTIBHits(reco::HitPattern::TRACK_HITS));
+      // data.fillMulti<float>("pfcand_nLostStripTIDHits", trk->hitPattern().numberOfLostStripTIDHits(reco::HitPattern::TRACK_HITS));
+      // data.fillMulti<float>("pfcand_nLostStripTOBHits", trk->hitPattern().numberOfLostStripTOBHits(reco::HitPattern::TRACK_HITS));
+      // data.fillMulti<float>("pfcand_nLostStripTECHits", trk->hitPattern().numberOfLostStripTECHits(reco::HitPattern::TRACK_HITS));
+
+      data.fillMulti<float>("pfcand_pixelLayers", trk->hitPattern().pixelLayersWithMeasurement());
+      data.fillMulti<float>("pfcand_pixelBarrelLayers", trk->hitPattern().pixelBarrelLayersWithMeasurement());
+      data.fillMulti<float>("pfcand_pixelEndcapLayers", trk->hitPattern().pixelEndcapLayersWithMeasurement());
+      data.fillMulti<float>("pfcand_stripLayers", trk->hitPattern().stripLayersWithMeasurement());
+      data.fillMulti<float>("pfcand_stripTIBLayers", trk->hitPattern().stripTIBLayersWithMeasurement());
+      data.fillMulti<float>("pfcand_stripTIDLayers", trk->hitPattern().stripTIDLayersWithMeasurement());
+      data.fillMulti<float>("pfcand_stripTOBLayers", trk->hitPattern().stripTOBLayersWithMeasurement());
+      data.fillMulti<float>("pfcand_stripTECLayers", trk->hitPattern().stripTECLayersWithMeasurement());
+
+    } else {
       data.fillMulti<float>("pfcand_normchi2", 999);
       data.fillMulti<float>("pfcand_quality", 0);
+
+      data.fillMulti<float>("pfcand_qoverp", 0);
+      data.fillMulti<float>("pfcand_qoverpError", 0);
+
+      data.fillMulti<float>("pfcand_nValidPixelHits", -1);
+      data.fillMulti<float>("pfcand_nValidPixelBarrelHits", -1);
+      data.fillMulti<float>("pfcand_nValidPixelEndcapHits", -1);
+      data.fillMulti<float>("pfcand_nValidStripHits", -1);
+      data.fillMulti<float>("pfcand_nValidStripTIBHits", -1);
+      data.fillMulti<float>("pfcand_nValidStripTIDHits", -1);
+      data.fillMulti<float>("pfcand_nValidStripTOBHits", -1);
+      data.fillMulti<float>("pfcand_nValidStripTECHits", -1);
+
+      // data.fillMulti<float>("pfcand_nLostPixelHits", -5);
+      // data.fillMulti<float>("pfcand_nLostPixelBarrelHits", -5);
+      // data.fillMulti<float>("pfcand_nLostPixelEndcapHits", -5);
+      // data.fillMulti<float>("pfcand_nLostStripHits", -5);
+      // data.fillMulti<float>("pfcand_nLostStripTIBHits", -5);
+      // data.fillMulti<float>("pfcand_nLostStripTIDHits", -5);
+      // data.fillMulti<float>("pfcand_nLostStripTOBHits", -5);
+      // data.fillMulti<float>("pfcand_nLostStripTECHits", -5);
+
+      data.fillMulti<float>("pfcand_pixelLayers", -1);
+      data.fillMulti<float>("pfcand_pixelBarrelLayers", -1);
+      data.fillMulti<float>("pfcand_pixelEndcapLayers", -1);
+      data.fillMulti<float>("pfcand_stripLayers", -1);
+      data.fillMulti<float>("pfcand_stripTIBLayers", -1);
+      data.fillMulti<float>("pfcand_stripTIDLayers", -1);
+      data.fillMulti<float>("pfcand_stripTOBLayers", -1);
+      data.fillMulti<float>("pfcand_stripTECLayers", -1);
     }
 
     // build track info map
