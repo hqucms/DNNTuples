@@ -22,7 +22,7 @@
 #include "DeepNTuples/Ntupler/interface/FatJetInfoFiller.h"
 #include "DeepNTuples/Ntupler/interface/SVFiller.h"
 #include "DeepNTuples/Ntupler/interface/PFCompleteFiller.h"
-
+#include "DeepNTuples/Ntupler/interface/TrackPairFiller.h"
 
 using namespace deepntuples;
 
@@ -77,10 +77,12 @@ DeepNtuplizer::DeepNtuplizer(const edm::ParameterSet& iConfig):
   PFCompleteFiller *parts = new PFCompleteFiller("", jetR);
   addModule(parts);
 
-  // read config and init modules
-  for(auto& m: modules_)
-    m->readConfig(iConfig, consumesCollector());
+  TrackPairFiller *tkpairs = new TrackPairFiller("", jetR);
+  addModule(tkpairs);
 
+  // read config and init modules
+  for (auto &m : modules_)
+    m->readConfig(iConfig, consumesCollector());
 }
 
 DeepNtuplizer::~DeepNtuplizer()

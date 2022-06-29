@@ -1,15 +1,8 @@
-/*
- * PFCompleteFiller.h
- *
- *  Created on: Sep 25, 2017
- *      Author: hqu
- */
-
-#ifndef NTUPLER_INTERFACE_PFCOMPLETEFILLER_H_
-#define NTUPLER_INTERFACE_PFCOMPLETEFILLER_H_
+#ifndef NTUPLER_INTERFACE_TRACKPAIRFILLER_H_
+#define NTUPLER_INTERFACE_TRACKPAIRFILLER_H_
 
 #include "TrackingTools/Records/interface/TransientTrackRecord.h"
-#include "DeepNTuples/BTagHelpers/interface/TrackInfoBuilder.h"
+#include "RecoBTag/FeatureTools/interface/TrackPairInfoBuilder.h"
 #include "DataFormats/Candidate/interface/VertexCompositePtrCandidate.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
 #include "DataFormats/PatCandidates/interface/Electron.h"
@@ -18,11 +11,11 @@
 
 namespace deepntuples {
 
-  class PFCompleteFiller : public NtupleBase {
+  class TrackPairFiller : public NtupleBase {
   public:
-    PFCompleteFiller() : PFCompleteFiller("", 0.8) {}
-    PFCompleteFiller(std::string branchName, double jetR = 0.8) : NtupleBase(branchName, jetR) {}
-    virtual ~PFCompleteFiller() {}
+    TrackPairFiller() : TrackPairFiller("", 0.8) {}
+    TrackPairFiller(std::string branchName, double jetR = 0.8) : NtupleBase(branchName, jetR) {}
+    virtual ~TrackPairFiller() {}
 
     // get input parameters from the cfg file
     virtual void readConfig(const edm::ParameterSet& iConfig, edm::ConsumesCollector&& cc) override;
@@ -38,7 +31,6 @@ namespace deepntuples {
 
   private:
     edm::ESGetToken<TransientTrackBuilder, TransientTrackRecord> transientTrackBuilderToken_;
-
     edm::EDGetTokenT<reco::VertexCollection> vtxToken_;
     edm::Handle<reco::VertexCollection> vertices;
 
@@ -50,4 +42,4 @@ namespace deepntuples {
 
 } /* namespace deepntuples */
 
-#endif /* NTUPLER_INTERFACE_PFCOMPLETEFILLER_H_ */
+#endif /* NTUPLER_INTERFACE_TRACKPAIRFILLER_H_ */
