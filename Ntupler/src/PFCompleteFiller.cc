@@ -35,13 +35,13 @@ namespace deepntuples {
     data.addMulti<float>("pfcand_pz");
     data.addMulti<float>("pfcand_energy");
 
-    data.addMulti<float>("pfcand_pt_nopuppi");
-    data.addMulti<float>("pfcand_pt_log_nopuppi");
-    data.addMulti<float>("pfcand_e_log_nopuppi");
+    // data.addMulti<float>("pfcand_pt_nopuppi");
+    // data.addMulti<float>("pfcand_pt_log_nopuppi");
+    // data.addMulti<float>("pfcand_e_log_nopuppi");
 
     data.addMulti<float>("pfcand_phirel");
     data.addMulti<float>("pfcand_etarel");
-    data.addMulti<float>("pfcand_puppiw");
+    // data.addMulti<float>("pfcand_puppiw");
     data.addMulti<float>("pfcand_abseta");
 
     data.addMulti<float>("pfcand_charge");
@@ -52,20 +52,20 @@ namespace deepntuples {
     data.addMulti<float>("pfcand_isNeutralHad");
 
     // for neutral
-    data.addMulti<float>("pfcand_hcalFrac");
-    data.addMulti<float>("pfcand_hcalFracCalib");
+    // data.addMulti<float>("pfcand_hcalFrac");
+    // data.addMulti<float>("pfcand_hcalFracCalib");
 
     // for charged
     data.addMulti<float>("pfcand_VTX_ass");
-    data.addMulti<float>("pfcand_fromPV");
+    // data.addMulti<float>("pfcand_fromPV");
     data.addMulti<float>("pfcand_lostInnerHits");
-    data.addMulti<float>("pfcand_trackHighPurity");
+    // data.addMulti<float>("pfcand_trackHighPurity");
 
     // impact parameters
-    data.addMulti<float>("pfcand_dz");
-    data.addMulti<float>("pfcand_dzsig");
-    data.addMulti<float>("pfcand_dxy");
-    data.addMulti<float>("pfcand_dxysig");
+    // data.addMulti<float>("pfcand_dz");
+    // data.addMulti<float>("pfcand_dzsig");
+    // data.addMulti<float>("pfcand_dxy");
+    // data.addMulti<float>("pfcand_dxysig");
 
     data.addMulti<float>("pfcand_dz_tanh10");
     data.addMulti<float>("pfcand_dzsig_tanh0p1");
@@ -79,10 +79,10 @@ namespace deepntuples {
     data.addMulti<float>("pfcand_qoverp");
     data.addMulti<float>("pfcand_qoverpError");
 
-    data.addMulti<float>("pfcand_nValidPixelHits");
+    // data.addMulti<float>("pfcand_nValidPixelHits");
     data.addMulti<float>("pfcand_nValidPixelBarrelHits");
     data.addMulti<float>("pfcand_nValidPixelEndcapHits");
-    data.addMulti<float>("pfcand_nValidStripHits");
+    // data.addMulti<float>("pfcand_nValidStripHits");
     data.addMulti<float>("pfcand_nValidStripTIBHits");
     data.addMulti<float>("pfcand_nValidStripTIDHits");
     data.addMulti<float>("pfcand_nValidStripTOBHits");
@@ -110,14 +110,14 @@ namespace deepntuples {
     // data.addMulti<float>("pfcand_btagMomentum");
     // data.addMulti<float>("pfcand_btagEta");
     data.addMulti<float>("pfcand_btagEtaRel");
-    data.addMulti<float>("pfcand_btagPtRel");
+    // data.addMulti<float>("pfcand_btagPtRel");
     // data.addMulti<float>("pfcand_btagPPar");
     // data.addMulti<float>("pfcand_btagDeltaR");
     data.addMulti<float>("pfcand_btagPtRatio");
     data.addMulti<float>("pfcand_btagPParRatio");
-    data.addMulti<float>("pfcand_btagSip3dVal");
-    data.addMulti<float>("pfcand_btagSip3dSig");
-    data.addMulti<float>("pfcand_btagJetDistVal");
+    // data.addMulti<float>("pfcand_btagSip3dVal");
+    // data.addMulti<float>("pfcand_btagSip3dSig");
+    // data.addMulti<float>("pfcand_btagJetDistVal");
     //  data.addMulti<float>("pfcand_btagJetDistSig"); // always gives 0?
 
     data.addMulti<float>("pfcand_btagSip3dVal_tanh10");
@@ -143,15 +143,15 @@ namespace deepntuples {
       data.fillMulti<float>("pfcand_pz", packed_cand->pz());
       data.fillMulti<float>("pfcand_energy", packed_cand->energy());
 
-      data.fillMulti<float>("pfcand_pt_nopuppi", packed_cand->pt());
-      data.fillMulti<float>("pfcand_pt_log_nopuppi", catchInfs(std::log(packed_cand->pt()), -99));
-      data.fillMulti<float>("pfcand_e_log_nopuppi", catchInfs(std::log(packed_cand->energy()), -99));
+      // data.fillMulti<float>("pfcand_pt_nopuppi", packed_cand->pt());
+      // data.fillMulti<float>("pfcand_pt_log_nopuppi", catchInfs(std::log(packed_cand->pt()), -99));
+      // data.fillMulti<float>("pfcand_e_log_nopuppi", catchInfs(std::log(packed_cand->energy()), -99));
 
       data.fillMulti<float>("pfcand_phirel", reco::deltaPhi(*packed_cand, jet));
       data.fillMulti<float>("pfcand_etarel", etasign * (packed_cand->eta() - jet.eta()));
       data.fillMulti<float>("pfcand_abseta", std::abs(packed_cand->eta()));
 
-      data.fillMulti<float>("pfcand_puppiw", jet_helper.getPuppiWeight(cand));
+      // data.fillMulti<float>("pfcand_puppiw", jet_helper.getPuppiWeight(cand));
 
       data.fillMulti<float>("pfcand_charge", packed_cand->charge());
       data.fillMulti<float>("pfcand_isEl", std::abs(packed_cand->pdgId()) == 11);
@@ -161,28 +161,28 @@ namespace deepntuples {
       data.fillMulti<float>("pfcand_isNeutralHad", std::abs(packed_cand->pdgId()) == 130);
 
       // for neutral
-      float hcal_fraction = 0.;
-      if (packed_cand->pdgId() == 1 || packed_cand->pdgId() == 130) {
-        hcal_fraction = packed_cand->hcalFraction();
-      } else if (packed_cand->isIsolatedChargedHadron()) {
-        hcal_fraction = packed_cand->rawHcalFraction();
-      }
-      data.fillMulti<float>("pfcand_hcalFrac", hcal_fraction);
-      data.fillMulti<float>("pfcand_hcalFracCalib", packed_cand->hcalFraction());
+      // float hcal_fraction = 0.;
+      // if (packed_cand->pdgId() == 1 || packed_cand->pdgId() == 130) {
+      //   hcal_fraction = packed_cand->hcalFraction();
+      // } else if (packed_cand->isIsolatedChargedHadron()) {
+      //   hcal_fraction = packed_cand->rawHcalFraction();
+      // }
+      // data.fillMulti<float>("pfcand_hcalFrac", hcal_fraction);
+      // data.fillMulti<float>("pfcand_hcalFracCalib", packed_cand->hcalFraction());
 
       // for charged
       data.fillMulti<float>("pfcand_VTX_ass", packed_cand->pvAssociationQuality());
-      data.fillMulti<float>("pfcand_fromPV", packed_cand->fromPV());
+      // data.fillMulti<float>("pfcand_fromPV", packed_cand->fromPV());
       data.fillMulti<float>("pfcand_lostInnerHits", packed_cand->lostInnerHits());
-      data.fillMulti<float>("pfcand_trackHighPurity", packed_cand->trackHighPurity());
+      // data.fillMulti<float>("pfcand_trackHighPurity", packed_cand->trackHighPurity());
 
       // impact parameters
-      data.fillMulti<float>("pfcand_dz", catchInfs(packed_cand->dz()));
-      data.fillMulti<float>("pfcand_dzsig",
-                            packed_cand->bestTrack() ? catchInfs(packed_cand->dz() / packed_cand->dzError()) : 0);
-      data.fillMulti<float>("pfcand_dxy", catchInfs(packed_cand->dxy()));
-      data.fillMulti<float>("pfcand_dxysig",
-                            packed_cand->bestTrack() ? catchInfs(packed_cand->dxy() / packed_cand->dxyError()) : 0);
+      // data.fillMulti<float>("pfcand_dz", catchInfs(packed_cand->dz()));
+      // data.fillMulti<float>("pfcand_dzsig",
+      //                       packed_cand->bestTrack() ? catchInfs(packed_cand->dz() / packed_cand->dzError()) : 0);
+      // data.fillMulti<float>("pfcand_dxy", catchInfs(packed_cand->dxy()));
+      // data.fillMulti<float>("pfcand_dxysig",
+      //                       packed_cand->bestTrack() ? catchInfs(packed_cand->dxy() / packed_cand->dxyError()) : 0);
 
       data.fillMulti<float>("pfcand_dz_tanh10", catchInfs(std::tanh(10 * packed_cand->dz())));
       data.fillMulti<float>(
@@ -201,10 +201,10 @@ namespace deepntuples {
         data.fillMulti<float>("pfcand_qoverp", trk->qoverp());
         data.fillMulti<float>("pfcand_qoverpError", trk->qoverpError());
 
-        data.fillMulti<float>("pfcand_nValidPixelHits", trk->hitPattern().numberOfValidPixelHits());
+        // data.fillMulti<float>("pfcand_nValidPixelHits", trk->hitPattern().numberOfValidPixelHits());
         data.fillMulti<float>("pfcand_nValidPixelBarrelHits", trk->hitPattern().numberOfValidPixelBarrelHits());
         data.fillMulti<float>("pfcand_nValidPixelEndcapHits", trk->hitPattern().numberOfValidPixelEndcapHits());
-        data.fillMulti<float>("pfcand_nValidStripHits", trk->hitPattern().numberOfValidStripHits());
+        // data.fillMulti<float>("pfcand_nValidStripHits", trk->hitPattern().numberOfValidStripHits());
         data.fillMulti<float>("pfcand_nValidStripTIBHits", trk->hitPattern().numberOfValidStripTIBHits());
         data.fillMulti<float>("pfcand_nValidStripTIDHits", trk->hitPattern().numberOfValidStripTIDHits());
         data.fillMulti<float>("pfcand_nValidStripTOBHits", trk->hitPattern().numberOfValidStripTOBHits());
@@ -235,10 +235,10 @@ namespace deepntuples {
         data.fillMulti<float>("pfcand_qoverp", 0);
         data.fillMulti<float>("pfcand_qoverpError", 0);
 
-        data.fillMulti<float>("pfcand_nValidPixelHits", -1);
+        // data.fillMulti<float>("pfcand_nValidPixelHits", -1);
         data.fillMulti<float>("pfcand_nValidPixelBarrelHits", -1);
         data.fillMulti<float>("pfcand_nValidPixelEndcapHits", -1);
-        data.fillMulti<float>("pfcand_nValidStripHits", -1);
+        // data.fillMulti<float>("pfcand_nValidStripHits", -1);
         data.fillMulti<float>("pfcand_nValidStripTIBHits", -1);
         data.fillMulti<float>("pfcand_nValidStripTIDHits", -1);
         data.fillMulti<float>("pfcand_nValidStripTOBHits", -1);
@@ -270,14 +270,14 @@ namespace deepntuples {
       // data.fillMulti<float>("pfcand_btagMomentum", catchInfs(trkinfo.getTrackMomentum()));
       // data.fillMulti<float>("pfcand_btagEta", catchInfs(trkinfo.getTrackEta()));
       data.fillMulti<float>("pfcand_btagEtaRel", catchInfs(trkinfo.getTrackEtaRel()));
-      data.fillMulti<float>("pfcand_btagPtRel", catchInfs(trkinfo.getTrackPtRel()));
+      // data.fillMulti<float>("pfcand_btagPtRel", catchInfs(trkinfo.getTrackPtRel()));
       // data.fillMulti<float>("pfcand_btagPPar", catchInfs(trkinfo.getTrackPPar()));
       // data.fillMulti<float>("pfcand_btagDeltaR", catchInfs(trkinfo.getTrackDeltaR()));
       data.fillMulti<float>("pfcand_btagPtRatio", catchInfs(trkinfo.getTrackPtRatio()));
       data.fillMulti<float>("pfcand_btagPParRatio", catchInfs(trkinfo.getTrackPParRatio()));
-      data.fillMulti<float>("pfcand_btagSip3dVal", catchInfs(trkinfo.getTrackSip3dVal()));
-      data.fillMulti<float>("pfcand_btagSip3dSig", catchInfs(trkinfo.getTrackSip3dSig()));
-      data.fillMulti<float>("pfcand_btagJetDistVal", catchInfs(trkinfo.getTrackJetDistVal()));
+      // data.fillMulti<float>("pfcand_btagSip3dVal", catchInfs(trkinfo.getTrackSip3dVal()));
+      // data.fillMulti<float>("pfcand_btagSip3dSig", catchInfs(trkinfo.getTrackSip3dSig()));
+      // data.fillMulti<float>("pfcand_btagJetDistVal", catchInfs(trkinfo.getTrackJetDistVal()));
       //    data.fillMulti<float>("pfcand_btagJetDistSig", catchInfs(trkinfo.getTrackJetDistSig()));
 
       data.fillMulti<float>("pfcand_btagSip3dVal_tanh10", catchInfs(std::tanh(10 * trkinfo.getTrackSip3dVal())));
