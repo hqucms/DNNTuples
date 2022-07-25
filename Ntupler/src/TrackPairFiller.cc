@@ -24,8 +24,8 @@ namespace deepntuples {
     data.addMulti<int>("idx_trk2");
 
     // pca (1 to 2)
-    data.addMulti<float>("trkpair_pca_distance");
-    data.addMulti<float>("trkpair_pca_significance");
+    // data.addMulti<float>("trkpair_pca_distance");
+    // data.addMulti<float>("trkpair_pca_significance");
 
     // //   pcas (1 and 2) poistions
     // data.addMulti<float>("trkpair_pcaSeed_x1");
@@ -45,24 +45,39 @@ namespace deepntuples {
     // data.addMulti<float>("trkpair_pcaSeed_zerr2");
 
     // dot prod betweeen track and pca direction
+    // data.addMulti<float>("trkpair_dotprod1");
+    // data.addMulti<float>("trkpair_dotprod2");
+
+    // pca distance form PV on both tracks
+    // data.addMulti<float>("trkpair_pca_dist1");
+    // data.addMulti<float>("trkpair_pca_dist2");
+
+    // track track or dir dir dotprod
+    // data.addMulti<float>("trkpair_dotprod12_2D");
+    // data.addMulti<float>("trkpair_dotprod12_2DV");
+    // data.addMulti<float>("trkpair_dotprod12_3D");
+    // data.addMulti<float>("trkpair_dotprod12_3DV");
+
+    // jet pca relative
+    // data.addMulti<float>("trkpair_pca_jetAxis_dist");
+    // data.addMulti<float>("trkpair_pca_jetAxis_dotprod");
+    // data.addMulti<float>("trkpair_pca_jetAxis_dEta");
+    // data.addMulti<float>("trkpair_pca_jetAxis_dPhi");
+
+    data.addMulti<float>("trkpair_pca_distance_tanh10");
+    data.addMulti<float>("trkpair_pca_significance_tanh0p07");
+
+    // dot prod betweeen track and pca direction
     data.addMulti<float>("trkpair_dotprod1");
     data.addMulti<float>("trkpair_dotprod2");
 
     //pca distance form PV on both tracks
-    data.addMulti<float>("trkpair_pca_dist1");
-    data.addMulti<float>("trkpair_pca_dist2");
+    data.addMulti<float>("trkpair_pca_dist1_tanh");
+    data.addMulti<float>("trkpair_pca_dist2_tanh");
 
-    //track track or dir dir dotprod
-    data.addMulti<float>("trkpair_dotprod12_2D");
-    data.addMulti<float>("trkpair_dotprod12_2DV");
-    data.addMulti<float>("trkpair_dotprod12_3D");
-    data.addMulti<float>("trkpair_dotprod12_3DV");
-
-    //jet pca relative
-    data.addMulti<float>("trkpair_pca_jetAxis_dist");
+    // jet pca relative
+    data.addMulti<float>("trkpair_pca_jetAxis_dist_tanh5");
     data.addMulti<float>("trkpair_pca_jetAxis_dotprod");
-    // data.addMulti<float>("trkpair_pca_jetAxis_dEta");
-    // data.addMulti<float>("trkpair_pca_jetAxis_dPhi");
   }
 
   bool TrackPairFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
@@ -96,45 +111,63 @@ namespace deepntuples {
                                        IPTools::absoluteImpactParameter3D(trk_i, pv),
                                        IPTools::absoluteTransverseImpactParameter(trk_i, pv));
 
-        data.fillMulti<float>("trkpair_pca_distance", trkpairinfo.pca_distance());
-        data.fillMulti<float>("trkpair_pca_significance", trkpairinfo.pca_significance());
+        // data.fillMulti<float>("trkpair_pca_distance", catchInfs(trkpairinfo.pca_distance()));
+        // data.fillMulti<float>("trkpair_pca_significance", catchInfs(trkpairinfo.pca_significance()));
 
         // //   pcas (1 and 2) poistions
-        // data.fillMulti<float>("trkpair_pcaSeed_x1", trkpairinfo.pcaSeed_x());
-        // data.fillMulti<float>("trkpair_pcaSeed_y1", trkpairinfo.pcaSeed_y());
-        // data.fillMulti<float>("trkpair_pcaSeed_z1", trkpairinfo.pcaSeed_z());
+        // data.fillMulti<float>("trkpair_pcaSeed_x1", catchInfs(trkpairinfo.pcaSeed_x()));
+        // data.fillMulti<float>("trkpair_pcaSeed_y1", catchInfs(trkpairinfo.pcaSeed_y()));
+        // data.fillMulti<float>("trkpair_pcaSeed_z1", catchInfs(trkpairinfo.pcaSeed_z()));
 
-        // data.fillMulti<float>("trkpair_pcaSeed_x2", trkpairinfo.pcaTrack_x());
-        // data.fillMulti<float>("trkpair_pcaSeed_y2", trkpairinfo.pcaTrack_y());
-        // data.fillMulti<float>("trkpair_pcaSeed_z2", trkpairinfo.pcaTrack_z());
+        // data.fillMulti<float>("trkpair_pcaSeed_x2", catchInfs(trkpairinfo.pcaTrack_x()));
+        // data.fillMulti<float>("trkpair_pcaSeed_y2", catchInfs(trkpairinfo.pcaTrack_y()));
+        // data.fillMulti<float>("trkpair_pcaSeed_z2", catchInfs(trkpairinfo.pcaTrack_z()));
 
-        // data.fillMulti<float>("trkpair_pcaSeed_xerr1", trkpairinfo.pcaSeed_xerr());
-        // data.fillMulti<float>("trkpair_pcaSeed_yerr1", trkpairinfo.pcaSeed_yerr());
-        // data.fillMulti<float>("trkpair_pcaSeed_zerr1", trkpairinfo.pcaSeed_zerr());
+        // data.fillMulti<float>("trkpair_pcaSeed_xerr1", catchInfs(trkpairinfo.pcaSeed_xerr()));
+        // data.fillMulti<float>("trkpair_pcaSeed_yerr1", catchInfs(trkpairinfo.pcaSeed_yerr()));
+        // data.fillMulti<float>("trkpair_pcaSeed_zerr1", catchInfs(trkpairinfo.pcaSeed_zerr()));
 
-        // data.fillMulti<float>("trkpair_pcaSeed_xerr2", trkpairinfo.pcaTrack_xerr());
-        // data.fillMulti<float>("trkpair_pcaSeed_yerr2", trkpairinfo.pcaTrack_yerr());
-        // data.fillMulti<float>("trkpair_pcaSeed_zerr2", trkpairinfo.pcaTrack_zerr());
+        // data.fillMulti<float>("trkpair_pcaSeed_xerr2", catchInfs(trkpairinfo.pcaTrack_xerr()));
+        // data.fillMulti<float>("trkpair_pcaSeed_yerr2", catchInfs(trkpairinfo.pcaTrack_yerr()));
+        // data.fillMulti<float>("trkpair_pcaSeed_zerr2", catchInfs(trkpairinfo.pcaTrack_zerr()));
 
-        // dot prod betweeen track and pca direction
-        data.fillMulti<float>("trkpair_dotprod1", trkpairinfo.dotprodTrack());
-        data.fillMulti<float>("trkpair_dotprod2", trkpairinfo.dotprodSeed());
+        // // dot prod betweeen track and pca direction
+        // data.fillMulti<float>("trkpair_dotprod1", catchInfs(trkpairinfo.dotprodTrack()));
+        // data.fillMulti<float>("trkpair_dotprod2", catchInfs(trkpairinfo.dotprodSeed()));
 
-        //pca distance form PV on both tracks
-        data.fillMulti<float>("trkpair_pca_dist1", trkpairinfo.pcaSeed_dist());
-        data.fillMulti<float>("trkpair_pca_dist2", trkpairinfo.pcaTrack_dist());
+        // //pca distance form PV on both tracks
+        // data.fillMulti<float>("trkpair_pca_dist1", catchInfs(trkpairinfo.pcaSeed_dist()));
+        // data.fillMulti<float>("trkpair_pca_dist2", catchInfs(trkpairinfo.pcaTrack_dist()));
 
-        //track track or dir dir dotprod
-        data.fillMulti<float>("trkpair_dotprod12_2D", trkpairinfo.dotprodTrackSeed2D());
-        data.fillMulti<float>("trkpair_dotprod12_2DV", trkpairinfo.dotprodTrackSeed2DV());
-        data.fillMulti<float>("trkpair_dotprod12_3D", trkpairinfo.dotprodTrackSeed3D());
-        data.fillMulti<float>("trkpair_dotprod12_3DV", trkpairinfo.dotprodTrackSeed3DV());
+        // //track track or dir dir dotprod
+        // data.fillMulti<float>("trkpair_dotprod12_2D", catchInfs(trkpairinfo.dotprodTrackSeed2D()));
+        // data.fillMulti<float>("trkpair_dotprod12_2DV", catchInfs(trkpairinfo.dotprodTrackSeed2DV()));
+        // data.fillMulti<float>("trkpair_dotprod12_3D", catchInfs(trkpairinfo.dotprodTrackSeed3D()));
+        // data.fillMulti<float>("trkpair_dotprod12_3DV", catchInfs(trkpairinfo.dotprodTrackSeed3DV()));
 
-        //jet pca relative
-        data.fillMulti<float>("trkpair_pca_jetAxis_dist", trkpairinfo.pca_jetAxis_dist());
-        data.fillMulti<float>("trkpair_pca_jetAxis_dotprod", trkpairinfo.pca_jetAxis_dotprod());
+        // //jet pca relative
+        // data.fillMulti<float>("trkpair_pca_jetAxis_dist", catchInfs(trkpairinfo.pca_jetAxis_dist()));
+        // data.fillMulti<float>("trkpair_pca_jetAxis_dotprod", catchInfs(trkpairinfo.pca_jetAxis_dotprod()));
         // data.fillMulti<float>("trkpair_pca_jetAxis_dEta", trkpairinfo.pca_jetAxis_dEta());
         // data.fillMulti<float>("trkpair_pca_jetAxis_dPhi", trkpairinfo.pca_jetAxis_dPhi());
+
+        // closest approach
+        data.fillMulti<float>("trkpair_pca_distance_tanh10", catchInfs(std::tanh(10 * trkpairinfo.pca_distance())));
+        data.fillMulti<float>("trkpair_pca_significance_tanh0p07",
+                              catchInfs(std::tanh(0.07 * trkpairinfo.pca_significance())));
+
+        // dot prod betweeen track and pca direction
+        data.fillMulti<float>("trkpair_dotprod1", catchInfs(trkpairinfo.dotprodTrack()));
+        data.fillMulti<float>("trkpair_dotprod2", catchInfs(trkpairinfo.dotprodSeed()));
+
+        //pca distance form PV on both tracks
+        data.fillMulti<float>("trkpair_pca_dist1_tanh", catchInfs(std::tanh(trkpairinfo.pcaSeed_dist())));
+        data.fillMulti<float>("trkpair_pca_dist2_tanh", catchInfs(std::tanh(trkpairinfo.pcaTrack_dist())));
+
+        //jet pca relative
+        data.fillMulti<float>("trkpair_pca_jetAxis_dist_tanh5",
+                              catchInfs(std::tanh(5 * trkpairinfo.pca_jetAxis_dist())));
+        data.fillMulti<float>("trkpair_pca_jetAxis_dotprod", catchInfs(trkpairinfo.pca_jetAxis_dotprod()));
       }
     }
 

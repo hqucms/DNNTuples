@@ -67,6 +67,11 @@ namespace deepntuples {
     data.addMulti<float>("pfcand_dxy");
     data.addMulti<float>("pfcand_dxysig");
 
+    data.addMulti<float>("pfcand_dz_tanh10");
+    data.addMulti<float>("pfcand_dzsig_tanh0p1");
+    data.addMulti<float>("pfcand_dxy_tanh10");
+    data.addMulti<float>("pfcand_dxysig_tanh0p07");
+
     // track quality
     data.addMulti<float>("pfcand_normchi2");
     data.addMulti<float>("pfcand_quality");
@@ -114,6 +119,10 @@ namespace deepntuples {
     data.addMulti<float>("pfcand_btagSip3dSig");
     data.addMulti<float>("pfcand_btagJetDistVal");
     //  data.addMulti<float>("pfcand_btagJetDistSig"); // always gives 0?
+
+    data.addMulti<float>("pfcand_btagSip3dVal_tanh10");
+    data.addMulti<float>("pfcand_btagSip3dSig_tanh0p05");
+    data.addMulti<float>("pfcand_btagJetDistVal_tanh10");
   }
 
   bool PFCompleteFiller::fill(const pat::Jet& jet, size_t jetidx, const JetHelper& jet_helper) {
@@ -174,6 +183,15 @@ namespace deepntuples {
       data.fillMulti<float>("pfcand_dxy", catchInfs(packed_cand->dxy()));
       data.fillMulti<float>("pfcand_dxysig",
                             packed_cand->bestTrack() ? catchInfs(packed_cand->dxy() / packed_cand->dxyError()) : 0);
+
+      data.fillMulti<float>("pfcand_dz_tanh10", catchInfs(std::tanh(10 * packed_cand->dz())));
+      data.fillMulti<float>(
+          "pfcand_dzsig_tanh0p1",
+          packed_cand->bestTrack() ? catchInfs(std::tanh(0.1 * packed_cand->dz() / packed_cand->dzError())) : 0);
+      data.fillMulti<float>("pfcand_dxy_tanh10", catchInfs(std::tanh(10 * packed_cand->dxy())));
+      data.fillMulti<float>(
+          "pfcand_dxysig_tanh0p07",
+          packed_cand->bestTrack() ? catchInfs(std::tanh(0.07 * packed_cand->dxy() / packed_cand->dxyError())) : 0);
 
       if (packed_cand->bestTrack()) {
         const auto* trk = packed_cand->bestTrack();
@@ -261,6 +279,10 @@ namespace deepntuples {
       data.fillMulti<float>("pfcand_btagSip3dSig", catchInfs(trkinfo.getTrackSip3dSig()));
       data.fillMulti<float>("pfcand_btagJetDistVal", catchInfs(trkinfo.getTrackJetDistVal()));
       //    data.fillMulti<float>("pfcand_btagJetDistSig", catchInfs(trkinfo.getTrackJetDistSig()));
+
+      data.fillMulti<float>("pfcand_btagSip3dVal_tanh10", catchInfs(std::tanh(10 * trkinfo.getTrackSip3dVal())));
+      data.fillMulti<float>("pfcand_btagSip3dSig_tanh0p05", catchInfs(std::tanh(0.05 * trkinfo.getTrackSip3dSig())));
+      data.fillMulti<float>("pfcand_btagJetDistVal_tanh10", catchInfs(std::tanh(10 * trkinfo.getTrackJetDistVal())));
     }
 
     return true;
