@@ -2,9 +2,9 @@
 
 ## Setup
 ```
-# use CMSSW_12_3_1
-cmsrel CMSSW_12_3_1
-cd CMSSW_12_3_1/src
+# use CMSSW_12_6_0_patch1 to get PuppiV17
+cmsrel CMSSW_12_6_0_patch1
+cd CMSSW_12_6_0_patch1/src
 cmsenv
 
 # clone this repo into "DeepNTuples" directory

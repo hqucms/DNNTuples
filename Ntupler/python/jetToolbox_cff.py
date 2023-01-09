@@ -1305,7 +1305,7 @@ def jetToolbox( proc, jetType, jetSequence, outputFile,
 
     #################################################################################
     ###### Computing jetID
-    from PhysicsTools.NanoAOD.jets_cff import looseJetId, tightJetId, tightJetIdLepVeto
+    from PhysicsTools.NanoAOD.jetsAK4_CHS_cff import looseJetId, tightJetId, tightJetIdLepVeto
 
     mod["looseJetId"] = mod["PATJets"]+"looseJetId"
     _addProcessAndTask( proc, mod["looseJetId"], looseJetId.clone(src = cms.InputTag(mod["PATJets"]) ))

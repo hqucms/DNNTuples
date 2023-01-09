@@ -20,7 +20,7 @@ options.register('isTrainSample', True, VarParsing.multiplicity.singleton,
 options.parseArguments()
 
 globalTagMap = {
-    'auto': 'auto:phase1_2021_realistic',
+    'auto': 'auto:phase1_2022_realistic',
 }
 
 era = 'auto'
